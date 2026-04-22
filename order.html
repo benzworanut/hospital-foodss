@@ -1,0 +1,1783 @@
+
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>ระบบสั่งอาหารผู้ป่วยใน</title>
+<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&family=Noto+Serif+Thai:wght@600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js"></script>
+<style>
+:root{
+  --navy:#0d2444;--blue:#1a56bb;--blue2:#3b82f6;--blue-pale:#eff6ff;
+  --teal:#0e7a5f;--teal2:#10b981;--teal-pale:#ecfdf5;
+  --amber:#b45309;--amber2:#f59e0b;--amber-pale:#fffbeb;
+  --red:#dc2626;--red-pale:#fef2f2;
+  --green:#166534;--green-pale:#dcfce7;
+  --gray:#64748b;--gray-lt:#e2e8f0;--gray-pale:#f8fafc;
+  --text:#0f172a;--text-soft:#64748b;
+  --white:#fff;--bg:#f0f4f8;
+  --sh:0 1px 3px rgba(0,0,0,.07),0 4px 12px rgba(0,0,0,.05);
+  --r:12px;--rs:8px;
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+html,body{height:100%;font-family:'Sarabun',sans-serif;color:var(--text);background:var(--bg);overflow:hidden;}
+body{display:flex;flex-direction:column;}
+
+/* ══ TOPBAR ══ */
+.topbar{background:linear-gradient(135deg,var(--navy),#1a3a6e);padding:10px 16px 9px;flex-shrink:0;box-shadow:0 2px 10px rgba(0,0,0,.3);}
+.tb-row{display:flex;align-items:center;justify-content:space-between;}
+.tb-hosp{font-size:10px;color:rgba(255,255,255,.5);letter-spacing:.8px;text-transform:uppercase;font-weight:600;margin-bottom:8px; }
+.tb-clock{font-family:monospace;font-size:11px;color:#7dd3fc;}
+.tb-title{font-family:'Noto Serif Thai',serif;font-size:16px;font-weight:700;color:#fff;margin-top:2px;}
+
+/* ══ BOTTOM NAV ══ */
+.bnav{background:var(--white);border-top:1px solid var(--gray-lt);display:flex;flex-shrink:0;box-shadow:0 -2px 8px rgba(0,0,0,.06);z-index:50;position:relative;min-height:58px;overflow:visible;}
+.bn{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:7px 2px 5px;border:none;background:transparent;cursor:pointer;font-family:'Sarabun',sans-serif;color:var(--text-soft);transition:color .15s;position:relative;}
+.bn.active{color:var(--blue);}
+.bn-ic{font-size:20px;line-height:1;}
+.bn-lbl{font-size:11px;font-weight:600;margin-top:2px;}
+.bn-dot{position:absolute;top:4px;right:calc(50% - 16px);background:var(--red);color:#fff;font-size:7px;font-weight:700;padding:1px 4px;border-radius:8px;min-width:13px;text-align:center;display:none;}
+.bn-dot.show{display:block;}
+/* QR FAB */
+.bn-qr-wrap{flex:1;display:flex;align-items:center;justify-content:center;position:relative;padding-bottom:4px;}
+.bn-qr-fab{width:54px;height:54px;border-radius:50%;border:none;background:linear-gradient(135deg,#1a56bb,#1e40af);color:#fff;font-size:24px;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;box-shadow:0 4px 14px rgba(26,86,187,.45);position:absolute;top:-18px;transition:transform .15s,box-shadow .15s;font-family:'Sarabun',sans-serif;gap:1px;}
+.bn-qr-fab:active{transform:scale(.93);}
+.bn-qr-fab.active,.bn-qr-fab.qr-active{background:linear-gradient(135deg,#0e7a5f,#065f46);box-shadow:0 4px 14px rgba(14,122,95,.45);}
+.bn-qr-fab .fab-lbl{font-size:9px;font-weight:600;letter-spacing:.3px;line-height:1;margin-top:1px;}
+
+/* ══ PAGES ══ */
+.main{flex:1;overflow:hidden;position:relative;}
+.page{position:absolute;inset:0;overflow-y:auto;padding:12px 12px 16px;display:none;-webkit-overflow-scrolling:touch;}
+.page.show{display:block;animation:fadeUp .18s ease;}
+@keyframes fadeUp{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
+
+/* ══ SHARED ══ */
+.card{background:var(--white);border:1px solid var(--gray-lt);border-radius:var(--r);box-shadow:var(--sh);}
+.section-hd{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--text-soft);margin-bottom:8px;display:flex;align-items:center;gap:6px;}
+.chip{display:inline-block;padding:2px 8px;border-radius:10px;font-size:10px;font-weight:600;}
+.chip-ok{background:var(--teal-pale);color:var(--teal);}
+.chip-edit{background:var(--amber-pale);color:var(--amber);}
+.chip-cancel{background:var(--red-pale);color:var(--red);}
+.empty{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:38px 20px;text-align:center;gap:8px;}
+.empty-ic{font-size:36px;}
+.empty-t{font-size:14px;font-weight:700;}
+.empty-s{font-size:12px;color:var(--text-soft);line-height:1.6;}
+.stats4{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:12px;}
+.s3{background:var(--white);border-radius:var(--rs);padding:9px 10px;border:1px solid var(--gray-lt);box-shadow:var(--sh);}
+.s3-n{font-size:20px;font-weight:700;line-height:1;}
+.s3-l{font-size:10px;color:var(--text-soft);}
+
+/* ══════════════════════
+   PAGE 1: ROOMS
+══════════════════════ */
+.p1-bar{display:flex;gap:7px;margin-bottom:9px;align-items:center;}
+.srch{flex:1;padding:8px 13px;border:1.5px solid var(--gray-lt);border-radius:24px;font-size:13px;font-family:'Sarabun',sans-serif;outline:none;background:var(--white);}
+.srch:focus{border-color:var(--blue2);}
+.ward-row{display:flex;gap:5px;overflow-x:auto;padding-bottom:3px;margin-bottom:10px;scrollbar-width:none;}
+.ward-row::-webkit-scrollbar{display:none;}
+.wbtn{flex-shrink:0;padding:5px 12px;border-radius:16px;border:1.5px solid var(--gray-lt);background:var(--white);font-size:11px;font-weight:600;cursor:pointer;font-family:'Sarabun',sans-serif;white-space:nowrap;transition:all .12s;}
+.wbtn.act{background:var(--blue);color:#fff;border-color:var(--blue);}
+.ward-group{margin-bottom:14px;}
+.ward-group-hd{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--text-soft);margin-bottom:8px;padding:0 2px;display:flex;align-items:center;gap:5px;}
+.rooms-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;}
+.rc{background:var(--white);border:1.5px solid var(--gray-lt);border-radius:var(--r);padding:11px 11px 9px;cursor:pointer;transition:all .18s;position:relative;overflow:hidden;}
+.rc:active{transform:scale(.97);}
+.rc.occ{background:linear-gradient(135deg,#eff6ff,#dbeafe);}
+.rc.dcday{border-color:var(--amber);background:var(--amber-pale);}
+.rc-id{font-size:15px;font-weight:700;margin-bottom:1px;color:var(--navy);}
+.rc-ward{font-size:9px;color:var(--text-soft);margin-bottom:5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.rc-pt-name{font-size:12px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-bottom:3px;}
+.rc-pt-empty{font-size:11px;color:var(--text-soft);font-style:italic;font-weight:400;}
+.rc-hn-row{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:5px;}
+.rc-id-hn{display:inline-block;font-size:9px;font-weight:700;padding:2px 6px;border-radius:5px;background:#dbeafe;color:#1e40af;font-family:monospace;}
+.rc-id-an{display:inline-block;font-size:9px;font-weight:700;padding:2px 6px;border-radius:5px;background:var(--teal-pale);color:var(--teal);font-family:monospace;}
+.rc-tag{display:inline-block;font-size:8px;font-weight:700;padding:2px 6px;border-radius:5px;}
+.tag-occ{background:var(--blue-pale);color:var(--blue);}
+.tag-empty{background:var(--gray-pale);color:var(--text-soft);}
+.tag-dc{background:#fef3c7;color:var(--amber);}
+.rc-orders-row{display:flex;gap:3px;flex-wrap:wrap;margin-top:5px;padding-top:5px;border-top:1px solid var(--gray-lt);}
+.rc-ord-chip{font-size:10px;padding:1px 5px;border-radius:5px;background:var(--teal-pale);}
+.rc-ord-chip.no-ord{background:var(--gray-pale);opacity:.45;}
+.rc-arr{position:absolute;right:8px;top:50%;transform:translateY(-50%);color:var(--gray);opacity:.3;font-size:15px;}
+
+/* ══════════════════════
+   ORDER MODAL
+══════════════════════ */
+.ord-modal{display:none;position:fixed;inset:0;z-index:100;flex-direction:column;background:var(--bg);}
+.ord-modal.show{display:flex;animation:fadeUp .2s ease;}
+.om-top{background:linear-gradient(135deg,var(--navy),#1a3a6e);padding:11px 14px;display:flex;align-items:center;gap:10px;flex-shrink:0;box-shadow:0 2px 10px rgba(0,0,0,.3);}
+.om-back{width:32px;height:32px;border-radius:50%;background:rgba(255,255,255,.15);border:none;color:#fff;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.om-info{flex:1;min-width:0;}
+.om-room{font-size:14px;font-weight:700;color:#fff;}
+.om-pt{font-size:11px;color:rgba(255,255,255,.6);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.om-body{flex:1;overflow-y:auto;padding:13px 13px 86px;-webkit-overflow-scrolling:touch;}
+.om-cta{position:absolute;bottom:0;left:0;right:0;padding:9px 13px;background:rgba(255,255,255,.96);backdrop-filter:blur(10px);border-top:1px solid var(--gray-lt);}
+.btn-ord{width:100%;padding:13px;border-radius:var(--r);border:none;background:linear-gradient(135deg,var(--blue),#1e40af);color:#fff;font-size:14px;font-weight:700;font-family:'Sarabun',sans-serif;cursor:pointer;box-shadow:0 4px 14px rgba(26,86,187,.4);transition:all .2s;}
+.btn-ord:disabled{background:var(--gray-lt);color:var(--text-soft);cursor:not-allowed;box-shadow:none;}
+/* date selector */
+.date-sel{background:var(--white);border:1px solid var(--gray-lt);border-radius:var(--rs);padding:8px 12px;display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;box-shadow:var(--sh);}
+.ds-lbl{font-size:12px;font-weight:700;}
+.ds-btns{display:flex;gap:5px;}
+.ds-b{padding:4px 10px;border-radius:14px;border:1px solid var(--gray-lt);background:var(--gray-pale);font-size:11px;font-weight:600;cursor:pointer;font-family:'Sarabun',sans-serif;}
+.ds-b.act{background:var(--blue);color:#fff;border-color:var(--blue);}
+/* patient info */
+.pt-box{background:var(--blue-pale);border:1px solid #bfdbfe;border-radius:var(--rs);padding:9px 12px;margin-bottom:12px;display:flex;gap:9px;align-items:flex-start;}
+.pt-em{font-size:26px;flex-shrink:0;}
+.pt-name{font-size:13px;font-weight:700;}
+.pt-meta{font-size:10px;color:var(--text-soft);margin-top:2px;display:flex;flex-wrap:wrap;gap:5px;}
+.pt-diag{font-size:10px;color:var(--text-soft);margin-top:4px;background:rgba(59,130,246,.1);border-radius:5px;padding:3px 7px;}
+/* meal */
+.meal-sec{margin-bottom:14px;}
+.meal-hd{display:flex;align-items:center;gap:6px;margin-bottom:8px;}
+.meal-title{font-size:13px;font-weight:700;}
+.mbadge{font-size:9px;font-weight:700;padding:2px 7px;border-radius:7px;}
+.mb-open{background:var(--teal-pale);color:var(--teal);}
+.mb-closed{background:var(--red-pale);color:var(--red);}
+.mb-done{background:var(--blue-pale);color:var(--blue);}
+.meal-srv{margin-left:auto;font-size:10px;color:var(--text-soft);}
+
+/* ══ MENU GRID WITH IMAGE ══ */
+.menu-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:9px;}
+@media(min-width:380px){.menu-grid{grid-template-columns:repeat(4,1fr);}}
+
+.mc{background:var(--white);border:2px solid var(--gray-lt);border-radius:var(--r);cursor:pointer;transition:all .18s;position:relative;overflow:hidden;}
+.mc:active{transform:scale(.96);}
+.mc.sel{border-color:var(--blue);box-shadow:0 0 0 3px rgba(59,130,246,.2);}
+
+/* รูปภาพอาหาร */
+.mc-img-wrap{width:100%;aspect-ratio:1/1;overflow:hidden;background:var(--gray-pale);position:relative;}
+.mc-img{width:100%;height:100%;object-fit:cover;display:block;transition:transform .2s;}
+.mc:hover .mc-img{transform:scale(1.05);}
+.mc.sel .mc-img{transform:scale(1.03);}
+.mc-img-placeholder{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:30px;}
+.mc-img-loading{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:var(--gray-pale);}
+.mc-body{padding:7px 7px 6px;}
+.mc-name{font-size:12px;font-weight:700;line-height:1.3;margin-bottom:2px;}
+.mc-cal{font-size:9px;color:var(--text-soft);}
+.mc-em-tag{position:absolute;top:5px;left:5px;font-size:12px;background:rgba(255,255,255,.85);border-radius:5px;padding:1px 4px;backdrop-filter:blur(4px);}
+.mc-tick{position:absolute;top:5px;right:5px;width:20px;height:20px;border-radius:50%;background:var(--blue);display:flex;align-items:center;justify-content:center;font-size:10px;color:#fff;opacity:0;transform:scale(.4);transition:all .18s;box-shadow:0 2px 6px rgba(26,86,187,.4);}
+.mc.sel .mc-tick{opacity:1;transform:scale(1);}
+
+/* ไม่มีรูป — fallback emoji layout */
+.mc.no-img{border-radius:var(--r);padding:9px 7px;text-align:center;}
+.mc.no-img .mc-em-tag{display:none;}
+.mc.no-img .mc-img-wrap{display:none;}
+.mc.no-img .mc-body{padding:0;}
+.mc.no-img .mc-em-big{font-size:22px;margin-bottom:3px;display:block;}
+.mc.no-img .mc-name{text-align:center;}
+.mc.no-img .mc-cal{text-align:center;}
+
+.cal-hidden .mc-cal{display:none!important;}
+.closed-box{background:var(--gray-pale);border:1.5px dashed var(--gray-lt);border-radius:var(--rs);padding:10px;text-align:center;font-size:11px;color:var(--text-soft);}
+.ordered-box{background:var(--teal-pale);border:1.5px solid var(--teal2);border-radius:var(--r);padding:10px 12px;display:flex;align-items:center;gap:9px;}
+.ob-em{font-size:22px;flex-shrink:0;}
+/* ถ้า ordered-box มีรูป */
+.ob-img{width:44px;height:44px;border-radius:var(--rs);object-fit:cover;flex-shrink:0;border:2px solid rgba(16,185,129,.3);}
+.ob-name{font-size:13px;font-weight:700;color:var(--green);}
+.ob-sub{font-size:10px;color:var(--text-soft);margin-top:1px;}
+.ob-chg{margin-left:auto;padding:4px 9px;border-radius:7px;border:1px solid var(--teal2);background:var(--white);font-size:10px;font-weight:600;color:var(--teal);cursor:pointer;white-space:nowrap;font-family:'Sarabun',sans-serif;}
+.note-sec{margin-top:7px;background:var(--white);border:1px solid var(--gray-lt);border-radius:var(--rs);padding:9px 11px;}
+.note-lbl{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--text-soft);margin-bottom:5px;}
+.note-inp{width:100%;border:1.5px solid var(--gray-lt);border-radius:var(--rs);padding:6px 9px;font-size:12px;font-family:'Sarabun',sans-serif;resize:none;outline:none;}
+.note-inp:focus{border-color:var(--blue2);}
+.note-hidden{display:none!important;}
+
+/* ══════════════════════
+   PAGE 2: 7-DAY MENU
+══════════════════════ */
+.day-strip{display:flex;gap:5px;overflow-x:auto;padding-bottom:3px;margin-bottom:12px;scrollbar-width:none;}
+.day-strip::-webkit-scrollbar{display:none;}
+.dbtn{flex-shrink:0;display:flex;flex-direction:column;align-items:center;padding:7px 13px;border-radius:var(--rs);border:1.5px solid var(--gray-lt);background:var(--white);cursor:pointer;font-family:'Sarabun',sans-serif;transition:all .15s;min-width:64px;position:relative;}
+.dbtn.act{background:var(--amber);border-color:var(--amber);}
+.dbtn.act .db-dow,.dbtn.act .db-date,.dbtn.act .db-month{color:#fff;}
+.db-dow{font-size:10px;font-weight:700;color:var(--text-soft);}
+.db-date{font-size:15px;font-weight:700;line-height:1.1;color:var(--text);}
+.db-month{font-size:9px;color:var(--text-soft);}
+.db-custom{width:5px;height:5px;border-radius:50%;background:var(--amber);margin-top:3px;display:none;}
+.dbtn.custom .db-custom{display:block;}
+
+/* 7-day menu grid with images */
+.m7-card{background:var(--white);border:1px solid var(--gray-lt);border-radius:var(--r);padding:12px 13px;margin-bottom:10px;box-shadow:var(--sh);}
+.m7-hd{display:flex;align-items:center;gap:7px;margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid var(--gray-lt);}
+.m7-em{font-size:18px;}
+.m7-name{font-size:13px;font-weight:700;}
+.m7-srv{font-size:10px;color:var(--text-soft);margin-left:4px;}
+.m7-cnt{margin-left:auto;font-size:10px;color:var(--text-soft);background:var(--gray-pale);padding:2px 8px;border-radius:8px;}
+.m7-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:15px;}
+@media(min-width:360px){.m7-grid{grid-template-columns:repeat(5,1fr);}}
+
+/* m7 item with image */
+.m7-item{background:var(--gray-pale);border-radius:var(--rs);overflow:hidden;position:relative;}
+.m7-img-wrap{width:100%;aspect-ratio:1/1;overflow:hidden;background:#e2e8f0;position:relative;}
+.m7-img{width:100%;height:100%;object-fit:cover;display:block;}
+.m7-img-ph{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:24px;}
+.m7-body{padding:6px 7px;}
+.m7-ic{font-size:18px;margin-bottom:3px;display:none;}/* hide when has image */
+.m7-nm{font-size:12px;font-weight:600;line-height:1.3;margin-bottom:2px;}
+.m7-cal{font-size:9px;color:var(--text-soft);}
+.m7-item.no-img .m7-img-wrap{display:none;}
+.m7-item.no-img .m7-ic{display:block;text-align:center;}
+.m7-item.no-img .m7-nm{text-align:center;}
+.m7-item.no-img .m7-cal{text-align:center;}
+.m7-item.no-img .m7-body{padding:8px 7px;text-align:center;}
+
+/* ══════════════════════
+   PAGE 3: QR SCANNER
+══════════════════════ */
+.qr-page{display:flex;flex-direction:column;align-items:center;gap:13px;}
+.qr-wrap{width:100%;max-width:310px;border-radius:var(--r);overflow:hidden;background:#000;position:relative;aspect-ratio:1;border:3px solid var(--blue2);display:none;}
+#qr-reader{width:100%;height:100%;}
+.qr-corners{position:absolute;inset:0;pointer-events:none;}
+.qr-corners::before,.qr-corners::after{content:'';position:absolute;width:28px;height:28px;border-color:var(--blue2);border-style:solid;}
+.qr-corners::before{top:8px;left:8px;border-width:3px 0 0 3px;}
+.qr-corners::after{bottom:8px;right:8px;border-width:0 3px 3px 0;}
+.qr-st{font-size:12px;text-align:center;color:var(--text-soft);padding:0 10px;}
+.qr-st.scanning{color:var(--blue);}
+.qr-st.ok{color:var(--teal);font-weight:700;}
+.qr-st.err{color:var(--red);}
+.qr-manual{background:var(--white);border:1px solid var(--gray-lt);border-radius:var(--r);padding:13px;width:100%;box-shadow:var(--sh);}
+.qr-manual-t{font-size:12px;font-weight:700;margin-bottom:9px;color:var(--text-soft);}
+.qr-row{display:flex;gap:7px;}
+.qr-inp{flex:1;padding:9px 12px;border:1.5px solid var(--gray-lt);border-radius:var(--rs);font-size:14px;font-family:'Sarabun',sans-serif;outline:none;text-transform:uppercase;}
+.qr-inp:focus{border-color:var(--blue2);}
+.btn-go{padding:9px 16px;border-radius:var(--rs);border:none;background:var(--blue);color:#fff;font-size:13px;font-weight:700;font-family:'Sarabun',sans-serif;cursor:pointer;}
+.btn-scan{padding:12px 22px;border-radius:var(--r);border:none;background:linear-gradient(135deg,var(--blue),#1e40af);color:#fff;font-size:14px;font-weight:700;font-family:'Sarabun',sans-serif;cursor:pointer;display:flex;align-items:center;gap:8px;box-shadow:0 4px 14px rgba(26,86,187,.35);}
+.btn-stop{padding:9px 18px;border-radius:var(--r);border:none;background:var(--red-pale);color:var(--red);font-size:13px;font-weight:700;font-family:'Sarabun',sans-serif;cursor:pointer;}
+
+/* ══════════════════════
+   PAGE 4: DISCHARGE
+══════════════════════ */
+.dc2{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;}
+.dc2-card{background:var(--white);border-radius:var(--rs);padding:10px 12px;border:1px solid var(--gray-lt);box-shadow:var(--sh);}
+.dc2-n{font-size:22px;font-weight:700;line-height:1;}
+.dc2-l{font-size:10px;color:var(--text-soft);}
+.dc-item{background:var(--white);border:1px solid var(--gray-lt);border-radius:var(--rs);padding:11px 13px;margin-bottom:8px;display:flex;align-items:flex-start;gap:10px;box-shadow:var(--sh);}
+.dc-item.dc-today{border-color:var(--amber);background:var(--amber-pale);}
+.dc-item.dc-over{border-color:var(--red);background:var(--red-pale);}
+.dc-ic{font-size:22px;flex-shrink:0;}
+.dc-info{flex:1;min-width:0;}
+.dc-name{font-size:13px;font-weight:700;}
+.dc-room{font-size:10px;color:var(--text-soft);margin-top:1px;}
+.dc-meta{font-size:10px;color:var(--text-soft);margin-top:3px;display:flex;flex-wrap:wrap;gap:5px;}
+.dc-right{flex-shrink:0;text-align:right;}
+.dc-date{font-size:12px;font-weight:700;color:var(--red);}
+.dc-chip{font-size:9px;font-weight:700;padding:2px 7px;border-radius:7px;display:inline-block;margin-top:3px;}
+.dcc-today{background:#fef3c7;color:var(--amber);}
+.dcc-over{background:var(--red-pale);color:var(--red);}
+.dcc-soon{background:var(--teal-pale);color:var(--teal);}
+
+/* ══════════════════════
+   PAGE 5: HISTORY (with thumbnails)
+══════════════════════ */
+.hf-row{display:flex;gap:5px;overflow-x:auto;padding-bottom:3px;margin-bottom:6px;scrollbar-width:none;}
+.hf-row::-webkit-scrollbar{display:none;}
+.hf{flex-shrink:0;padding:5px 11px;border-radius:14px;border:1.5px solid var(--gray-lt);background:var(--white);font-size:11px;font-weight:600;cursor:pointer;font-family:'Sarabun',sans-serif;}
+.hf.act{background:var(--blue);color:#fff;border-color:var(--blue);}
+/* ── date range search bar ── */
+.hist-search-area{background:var(--white);border:1px solid var(--gray-lt);border-radius:var(--r);padding:10px 12px;margin-bottom:10px;box-shadow:var(--sh);display:flex;flex-direction:column;gap:8px;}
+.hist-range-row{display:flex;align-items:center;gap:6px;flex-wrap:wrap;}
+.hist-range-lbl{font-size:11px;font-weight:600;color:var(--text-soft);white-space:nowrap;flex-shrink:0;}
+.hist-date-inp{width:200px;padding:7px 10px 7px 30px;border:1.5px solid var(--gray-lt);border-radius:20px;font-size:12px;font-family:'Sarabun',sans-serif;outline:none;background:var(--white);color:var(--text);background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='13' height='13' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2.5'%3E%3Crect x='3' y='4' width='18' height='18' rx='2'/%3E%3Cline x1='16' y1='2' x2='16' y2='6'/%3E%3Cline x1='8' y1='2' x2='8' y2='6'/%3E%3Cline x1='3' y1='10' x2='21' y2='10'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:10px center;}
+.hist-date-inp:focus{border-color:var(--blue2);}
+.hist-date-inp::placeholder{color:var(--text-soft);font-size:11px;}
+.hist-range-sep{font-size:12px;color:var(--text-soft);flex-shrink:0;}
+.hist-range-shortcuts{display:flex;gap:4px;margin-left:auto;}
+.hist-shortcut{padding:5px 10px;border-radius:12px;border:1.5px solid var(--gray-lt);background:var(--white);font-size:11px;font-weight:600;cursor:pointer;font-family:'Sarabun',sans-serif;color:var(--text-soft);transition:all .12s;white-space:nowrap;}
+.hist-shortcut:active{transform:scale(.96);}
+.hist-shortcut.today-btn{border-color:var(--blue2);color:var(--blue);}
+.hist-shortcut.today-btn:hover{background:var(--blue);color:#fff;border-color:var(--blue);}
+.hist-shortcut:not(.today-btn):hover{background:var(--gray-pale);}
+.hist-clear-btn{padding:5px 10px;border-radius:12px;border:1.5px solid var(--gray-lt);background:var(--gray-pale);font-size:11px;font-weight:600;cursor:pointer;font-family:'Sarabun',sans-serif;color:var(--text-soft);white-space:nowrap;display:none;flex-shrink:0;}
+.hist-clear-btn.show{display:block;}
+/* building filter row */
+.hist-bldg-row{display:flex;gap:5px;overflow-x:auto;scrollbar-width:none;}
+.hist-bldg-row::-webkit-scrollbar{display:none;}
+.hbtn{flex-shrink:0;padding:4px 10px;border-radius:12px;border:1.5px solid var(--gray-lt);background:var(--white);font-size:11px;font-weight:600;cursor:pointer;font-family:'Sarabun',sans-serif;white-space:nowrap;transition:all .12s;}
+.hbtn.act{background:var(--teal);color:#fff;border-color:var(--teal);}
+.hist-result-info{font-size:11px;color:var(--text-soft);padding:0 2px;}
+.hi{background:var(--white);border:1px solid var(--gray-lt);border-radius:var(--rs);padding:10px 12px;margin-bottom:8px;display:flex;align-items:flex-start;gap:9px;box-shadow:var(--sh);}
+.hi-thumb{width:42px;height:42px;border-radius:var(--rs);object-fit:cover;flex-shrink:0;border:1px solid var(--gray-lt);}
+.hi-em{font-size:22px;flex-shrink:0;width:42px;height:42px;display:flex;align-items:center;justify-content:center;background:var(--gray-pale);border-radius:var(--rs);}
+.hi-info{flex:1;min-width:0;}
+.hi-menu{font-size:13px;font-weight:700;}
+.hi-meta{font-size:10px;color:var(--text-soft);margin-top:2px;display:flex;flex-wrap:wrap;gap:5px;}
+.hi-right{flex-shrink:0;text-align:right;}
+.hi-room{font-size:11px;font-weight:700;color:var(--navy);}
+
+/* ══ TODAY SUMMARY ══ */
+.today-sum{background:var(--white);border:1px solid var(--gray-lt);border-radius:var(--r);margin-bottom:12px;overflow:hidden;box-shadow:var(--sh);}
+.ts-hd{display:flex;align-items:center;justify-content:space-between;padding:9px 13px;background:linear-gradient(135deg,var(--navy),#1a3a6e);cursor:pointer;}
+.ts-hd-title{font-size:12px;font-weight:700;color:#fff;display:flex;align-items:center;gap:6px;}
+.ts-hd-cnt{font-size:11px;color:rgba(255,255,255,.7);}
+.ts-hd-arrow{font-size:12px;color:rgba(255,255,255,.5);transition:transform .2s;}
+.ts-hd-arrow.open{transform:rotate(180deg);}
+.ts-body{display:none;padding:0;}
+.ts-body.show{display:block;}
+.ts-row{display:flex;align-items:center;gap:9px;padding:8px 13px;border-bottom:1px solid var(--gray-lt);}
+.ts-row:last-child{border-bottom:none;}
+.ts-row:hover{background:var(--gray-pale);}
+.ts-thumb{width:36px;height:36px;border-radius:var(--rs);object-fit:cover;flex-shrink:0;border:1px solid var(--gray-lt);}
+.ts-em{font-size:20px;flex-shrink:0;width:36px;height:36px;display:flex;align-items:center;justify-content:center;background:var(--gray-pale);border-radius:var(--rs);}
+.ts-info{flex:1;min-width:0;}
+.ts-menu{font-size:12px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.ts-meta{font-size:10px;color:var(--text-soft);margin-top:1px;display:flex;gap:6px;flex-wrap:wrap;}
+.ts-right{text-align:right;flex-shrink:0;}
+.ts-room{font-size:11px;font-weight:700;color:var(--navy);}
+.ts-time{font-size:10px;color:var(--text-soft);margin-top:1px;}
+.ts-empty{padding:14px;text-align:center;font-size:12px;color:var(--text-soft);}
+
+/* ══ CONFIRM SHEET ══ */
+.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:200;align-items:flex-end;justify-content:center;backdrop-filter:blur(3px);}
+.overlay.show{display:flex;}
+.sheet{background:var(--white);border-radius:18px 18px 0 0;padding:16px 16px 26px;width:100%;max-width:460px;animation:slideUp .22s ease;}
+@keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+.sh-hd{width:34px;height:4px;background:var(--gray-lt);border-radius:2px;margin:0 auto 12px;}
+.sh-ic{font-size:30px;text-align:center;margin-bottom:6px;}
+.sh-t{font-size:15px;font-weight:700;text-align:center;margin-bottom:3px;}
+.sh-menu{font-size:16px;font-weight:700;color:var(--blue);text-align:center;margin-bottom:3px;line-height:1.5;}
+.sh-sub{font-size:12px;color:var(--text-soft);text-align:center;margin-bottom:16px;line-height:1.5;}
+/* confirm thumbnails */
+.sh-thumbs{display:flex;justify-content:center;gap:8px;margin-bottom:12px;flex-wrap:wrap;}
+.sh-thumb-item{display:flex;flex-direction:column;align-items:center;gap:3px;}
+.sh-thumb-img{width:54px;height:54px;border-radius:var(--rs);object-fit:cover;border:2px solid var(--blue-pale);}
+.sh-thumb-lbl{font-size:9px;font-weight:600;color:var(--text-soft);text-align:center;max-width:60px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.sh-btns{display:flex;flex-direction:column;gap:7px;}
+.btn-ok{padding:13px;border-radius:var(--r);border:none;background:linear-gradient(135deg,var(--teal),var(--teal2));color:#fff;font-size:14px;font-weight:700;font-family:'Sarabun',sans-serif;cursor:pointer;}
+.btn-no{padding:10px;border-radius:var(--r);border:none;background:var(--gray-pale);color:var(--text-soft);font-size:13px;font-weight:600;font-family:'Sarabun',sans-serif;cursor:pointer;}
+
+/* ══ TOAST ══ */
+.toast{position:fixed;bottom:74px;left:50%;transform:translateX(-50%) translateY(8px);background:#1e293b;color:#fff;padding:8px 16px;border-radius:22px;font-size:12px;font-weight:600;opacity:0;transition:all .25s;z-index:999;pointer-events:none;white-space:nowrap;box-shadow:0 4px 14px rgba(0,0,0,.2);}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+.toast.ok{background:linear-gradient(135deg,var(--teal),#34d399);}
+.toast.err{background:linear-gradient(135deg,var(--red),#f87171);}
+
+/* ══ API LOADING BAR ══ */
+.api-bar{position:fixed;top:0;left:0;right:0;height:3px;z-index:9999;background:linear-gradient(90deg,#1a56bb 0%,#3b82f6 50%,#1a56bb 100%);background-size:200%;animation:apiShimmer 1s linear infinite;display:none;}
+.api-bar.show{display:block;}
+@keyframes apiShimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
+/* ══ API STATUS BADGE ══ */
+.api-badge{display:inline-flex;align-items:center;gap:4px;font-size:10px;padding:2px 8px;border-radius:12px;background:rgba(255,255,255,.12);color:rgba(255,255,255,.6);cursor:pointer;flex-shrink:0;}
+.api-badge.ok{background:rgba(16,185,129,.25);color:#6ee7b7;}
+.api-badge.err{background:rgba(239,68,68,.25);color:#fca5a5;}
+</style>
+</head>
+<body>
+
+<!-- API LOADING BAR -->
+<div class="api-bar" id="apiBar"></div>
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <div class="tb-row">
+    <div class="tb-hosp" id="hospName">โรงพยาบาล</div>
+    <span class="api-badge" id="apiBadge" onclick="fetchPatients()" title="กดเพื่อรีเฟรช">⏳ กำลังโหลด</span>
+    <span class="tb-clock" id="clock">--:--:--</span>
+  </div>
+  <div class="tb-title">🏥 ระบบสั่งอาหารผู้ป่วยประกันชีวิต</div>
+</div>
+
+<!-- PAGES -->
+<div class="main">
+
+  <!-- ═══ PAGE 1 : ROOMS ═══ -->
+  <div class="page show" id="page-rooms">
+    <div class="p1-bar">
+      <input class="srch" id="roomSearch" placeholder="🔍 ค้นหาชื่อ / HN / AN / ห้อง..." oninput="renderRooms()">
+    </div>
+    <div class="ward-row" id="wardRow"></div>
+    <div class="stats4">
+      <div class="s3"><div class="s3-n" id="st-total" style="color:var(--blue)">0</div><div class="s3-l">ทั้งหมด</div></div>
+      <div class="s3"><div class="s3-n" id="st-occ" style="color:var(--teal)">0</div><div class="s3-l">มีผู้ป่วย</div></div>
+      <div class="s3"><div class="s3-n" id="st-ord" style="color:var(--amber)">0</div><div class="s3-l">สั่งวันนี้</div></div>
+      <div class="s3"><div class="s3-n" id="st-dc" style="color:var(--red)">0</div><div class="s3-l">D/C วันนี้</div></div>
+    </div>
+    <div id="todaySummary"></div>
+    <div id="roomsOut"></div>
+  </div>
+
+  <!-- ═══ PAGE 2 : 7-DAY MENU ═══ -->
+  <div class="page" id="page-menu7">
+    <div class="section-hd">📅 เมนูอาหาร 7 วัน</div>
+    <div class="day-strip" id="dayStrip"></div>
+    <div id="menu7Out"></div>
+  </div>
+
+  <!-- ═══ PAGE 3 : QR SCANNER ═══ -->
+  <div class="page" id="page-qr">
+    <div class="qr-page">
+      <div style="text-align:center;">
+        <div style="font-size:15px;font-weight:700;">⛶ สแกน QR Code</div>
+        <div style="font-size:12px;color:var(--text-soft);margin-top:3px;">สแกน QR ที่หัวเตียงเพื่อเปิดหน้าสั่งอาหาร</div>
+      </div>
+      <div id="qrViewWrap" style="display:flex;justify-content:center;width:100%;display:none;">
+        <div class="qr-wrap" id="qrBox"><div id="qr-reader"></div><div class="qr-corners"></div></div>
+      </div>
+      <div id="qrBtnStart" style="text-align:center;">
+        <button class="btn-scan" onclick="startQR()">📷 เปิดกล้องสแกน</button>
+      </div>
+      <div id="qrBtnStop" style="display:none;text-align:center;">
+        <button class="btn-stop" onclick="stopQR()">✕ ปิดกล้อง</button>
+      </div>
+      <div class="qr-st" id="qrSt">กดปุ่มเปิดกล้องเพื่อสแกน QR Code</div>
+      <div class="qr-manual">
+        <div class="qr-manual-t">⌨️ หาจาก HN AN หรือชื่่อห้อง</div>
+        <div class="qr-row">
+          <input class="qr-inp" id="manualRoom" placeholder="หาจาก HN AN หรือชื้อห้อง" maxlength="12"
+            oninput="this.value=this.value.toUpperCase()"
+            onkeydown="if(event.key==='Enter')goManual()">
+          <button class="btn-go" onclick="goManual()">เข้า →</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ PAGE 4 : DISCHARGE ═══ -->
+  <div class="page" id="page-dc">
+    <div class="dc2">
+      <div class="dc2-card"><div class="dc2-n" id="dc-n-today" style="color:var(--amber)">0</div><div class="dc2-l">🔴 D/C วันนี้</div></div>
+      <div class="dc2-card"><div class="dc2-n" id="dc-n-over" style="color:var(--red)">0</div><div class="dc2-l">⚠️ เกินกำหนด</div></div>
+    </div>
+    <div id="dcOut"></div>
+  </div>
+
+  <!-- ═══ PAGE 5 : HISTORY ═══ -->
+  <div class="page" id="page-hist">
+    <div class="hist-search-area">
+      <!-- แถวช่วงวันที่ -->
+      <div class="hist-range-row">
+        <span class="hist-range-lbl">📅 ตั้งแต่</span>
+        <input class="hist-date-inp" id="histDateFrom" type="text"
+          placeholder="วว/ดด/ปปปป" maxlength="10" inputmode="numeric"
+          oninput="onHistRangeInput(this,'from')">
+        <span class="hist-range-sep">—</span>
+        <span class="hist-range-lbl">ถึง</span>
+        <input class="hist-date-inp" id="histDateTo" type="text"
+          placeholder="วว/ดด/ปปปป" maxlength="10" inputmode="numeric"
+          oninput="onHistRangeInput(this,'to')">
+        <button class="hist-clear-btn" id="histClearBtn" onclick="clearHistDate()">✕ ล้าง</button>
+        <div class="hist-range-shortcuts">
+          <button class="hist-shortcut today-btn" onclick="setHistRange(0,0)">วันนี้</button>
+          <button class="hist-shortcut" onclick="setHistRange(-6,0)">7 วัน</button>
+          <button class="hist-shortcut" onclick="setHistRange(-29,0)">30 วัน</button>
+        </div>
+      </div>
+      <!-- แถวตึก -->
+      <div class="hist-bldg-row" id="histBldgRow">
+        <button class="hbtn act" onclick="setHistBldg('ALL',this)">🏥 ทุกตึก</button>
+      </div>
+    </div>
+    <!-- กรองมื้อ -->
+    <div class="hf-row">
+      <button class="hf act" onclick="setHF('ALL',this)">ทั้งหมด</button>
+      <button class="hf" onclick="setHF('morning',this)">🌅 เช้า</button>
+      <button class="hf" onclick="setHF('morning_snack',this)">☕ ว่างเช้า</button>
+      <button class="hf" onclick="setHF('noon',this)">☀️ กลางวัน</button>
+      <button class="hf" onclick="setHF('noon_snack',this)">🍵 ว่างบ่าย</button>
+      <button class="hf" onclick="setHF('evening',this)">🌙 เย็น</button>
+    </div>
+    <div class="hist-result-info" id="histResultInfo"></div>
+    <div id="histOut"></div>
+  </div>
+
+</div><!-- /main -->
+
+<!-- BOTTOM NAV -->
+<nav class="bnav">
+  <button class="bn active" id="bn-rooms" onclick="showPage('rooms',this)">
+    <span class="bn-ic">📋</span><span class="bn-lbl">ห้องพัก</span>
+  </button>
+  <button class="bn" id="bn-dc" onclick="showPage('dc',this)">
+    <span class="bn-ic">🔔</span><span class="bn-lbl">D/C</span>
+    <span class="bn-dot" id="dot-dc"></span>
+  </button>
+  <div class="bn-qr-wrap">
+    <button class="bn-qr-fab" id="bn-qr" onclick="showPage('qr',this)">
+      <span style="font-size:22px;line-height:1;">⛶</span>
+      <span class="fab-lbl">สแกน QR</span>
+    </button>
+  </div>
+  <button class="bn" id="bn-menu7" onclick="showPage('menu7',this)">
+    <span class="bn-ic">🍽️</span><span class="bn-lbl">เมนู 7 วัน</span>
+  </button>
+  <button class="bn" id="bn-hist" onclick="showPage('hist',this)">
+    <span class="bn-ic">🍱</span><span class="bn-lbl">ประวัติ</span>
+    <span class="bn-dot" id="dot-hist"></span>
+  </button>
+</nav>
+
+<!-- ORDER MODAL -->
+<div class="ord-modal" id="ordModal">
+  <div class="om-top">
+    <button class="om-back" onclick="closeOrdModal()">←</button>
+    <div class="om-info">
+      <div class="om-room" id="om-room">ห้อง —</div>
+      <div class="om-pt" id="om-pt">—</div>
+    </div>
+  </div>
+  <div class="om-body" id="om-body"></div>
+  <div class="om-cta" id="om-cta" style="display:none;">
+    <button class="btn-ord" id="om-btn" onclick="openSheet()" disabled>เลือกเมนูก่อน</button>
+  </div>
+</div>
+
+<!-- CONFIRM SHEET -->
+<div class="overlay" id="ov-cf">
+  <div class="sheet">
+    <div class="sh-hd"></div>
+    <div class="sh-ic">🍽️</div>
+    <div class="sh-t">ยืนยันสั่งอาหาร</div>
+    <div class="sh-thumbs" id="sh-thumbs"></div>
+    <div class="sh-menu" id="sh-menu">—</div>
+    <div class="sh-sub" id="sh-sub">—</div>
+    <div class="sh-btns">
+      <button class="btn-ok" onclick="confirmOrder()">✅ ยืนยัน</button>
+      <button class="btn-no" onclick="closeOv()">ยกเลิก</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ════════════════════════════════════
+   CONSTANTS
+════════════════════════════════════ */
+const MEAL_NAMES={morning:'มื้อเช้า',morning_snack:'ว่างเช้า',noon:'มื้อกลางวัน',noon_snack:'ว่างบ่าย',evening:'มื้อเย็น'};
+const MEAL_EM={morning:'🌅',morning_snack:'☕',noon:'☀️',noon_snack:'🍵',evening:'🌙'};
+const MEAL_KEYS=['morning','morning_snack','noon','noon_snack','evening'];
+const DAY_TH=['อา.','จ.','อ.','พ.','พฤ.','ศ.','ส.'];
+const DAY_FULL=['อาทิตย์','จันทร์','อังคาร','พุธ','พฤหัสบดี','ศุกร์','เสาร์'];
+const MONTH_TH=['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+
+/* ════════════════════════════════════
+   WEEKLY MENUS — ตรงกับ admin.html ทุก key/id
+   ใช้เป็น fallback ถ้า admin ยังไม่บันทึก
+════════════════════════════════════ */
+const WEEKLY_MENUS = {
+  1: {
+    morning:[
+      {id:'m1_1',name:'ชุดที่ 1 Breakfast + โอวัลติน',       cal:'180 kcal',em:'🍚',imageUrl:'food_png/1.png'},
+      {id:'m1_2',name:'ชุดที่ 2 ข้าวต้มหมูทรงเครื่อง + น้ำสมุนไพร',       cal:'160 kcal',em:'🍲',imageUrl:'food_png/2.png'},
+    ],
+    morning_snack:[
+      {id:'s1_1',name:'แซนวิช',             cal:'120 kcal',em:'🥪',imageUrl:'food_png/3.png'},
+      {id:'s1_2',name:'ขนมไทย',       cal:'90 kcal', em:'🍮',imageUrl:'food_png/4.png'},
+    ],
+    noon:[
+      {id:'n1_1',name:'ชุดที่ 1 ข้าวผัดคะน้าหมูชิ้น + ซุปมันฝรั่ง', cal:'380 kcal',em:'🍛',imageUrl:'food_png/5.png'},
+      {id:'n1_2',name:'ชุดที่ 2 ข้าวสวย + แกงจืดผักกาดขาวหมูบดเต๋าหู้ไข่ + ผัดเครื่องแกงไก่กับถั่วฝักยาว',  cal:'250 kcal',em:'🍚',imageUrl:'food_png/6.png'},
+    ],
+    noon_snack:[
+      {id:'a1_1',name:'ผลไม้รวม',    cal:'100 kcal',em:'🍎',imageUrl:'food_png/7.png'},
+    ],
+    evening:[
+      {id:'e1_1',name:'ชุดที่ 1 ข้าวสวย + ผัดกระเพราไก่ + ไข่ดาว', cal:'260 kcal',em:'🥘',imageUrl:'food_png/8.png'},
+      {id:'e1_2',name:'ชุดที่ 2 ข้าวสวย + ผัดบวบกับไข่ + แกงกะทิไก่กับมะเขือเปราะ',     cal:'220 kcal',em:'🍳',imageUrl:'food_png/9.png'},
+    ],
+  },
+  2: {
+    morning:[
+      {id:'m2_1',name:'ชุดที่ 1 Breakfast + น้ำผลไม้',        cal:'310 kcal',em:'🍳',imageUrl:'food_png/10.png'},
+      {id:'m2_2',name:'ชุดที่ 2 ข้าวต้มขาว + ผัดผักบุ้ง + ยำไข่เค็ม',        cal:'175 kcal',em:'🍚',imageUrl:'food_png/11.png'},
+    ],
+    morning_snack:[
+      {id:'s2_1',name:'ขนมปัง + แยมสตรอเบอร์รี่',      cal:'150 kcal',em:'🍞',imageUrl:'food_png/12.png'},
+    ],
+    noon:[
+      {id:'n2_1',name:'ชุดที่ 1 ผัดซีอื๊วเส้นใหญ่กับหมู',        cal:'420 kcal',em:'🍜',imageUrl:'food_png/13.png'},
+      {id:'n2_2',name:'ชุดที่ 2 ข้าวสวย + แกงส้มหอยแมลงภู่กับสับปะรด + ผัดผักรวม', cal:'350 kcal',em:'🍝',imageUrl:'food_png/14.png'},
+    ],
+    noon_snack:[
+      {id:'a2_1',name:'ผลไม้รวม',          cal:'80 kcal', em:'🍎',imageUrl:'food_png/15.png'},
+    ],
+    evening:[
+      {id:'e2_1',name:'ชุดที่ 1 ข้าวสวย + ผัดพริกไก่ + ซุปหัวไชเท้า',         cal:'300 kcal',em:'🍲',imageUrl:'food_png/16.png'},
+      {id:'e2_2',name:'ชุดที่ 2 ข้าวสวย + แกงพริกไก่ + แกงจืดฟักกับหมูสับ', cal:'360 kcal',em:'🍛',imageUrl:'food_png/17.png'},
+    ],
+  },
+  3: {
+    morning:[
+      {id:'m3_1',name:'ชุดที่ 1 ข้าวต้มไก่ทรงเครื่อง + น้ำสมุนไพร',      cal:'190 kcal',em:'🥣',imageUrl:'food_png/18.png'},
+      {id:'m3_2',name:'ชุดที่ 2 Breakfast + โก้โก้',    cal:'240 kcal',em:'🍳',imageUrl:'food_png/19.png'},
+    ],
+    morning_snack:[
+      {id:'s3_1',name:'ขนมจีบ',cal:'90 kcal',em:'🫓',imageUrl:'food_png/20.png'},
+      {id:'s3_2',name:'ขนมไทย',          cal:'70 kcal', em:'🍮',imageUrl:'food_png/21.png'},
+    ],
+    noon:[
+      {id:'n3_1',name:'ชุดที่ 1 ข้าวผัดหมู + น้ำซุปหัวไชเท้า', cal:'400 kcal',em:'🍛',imageUrl:'food_png/22.png'},
+      {id:'n3_2',name:'ชุดที่ 2 แกงเขียวหวานลูกชิ้นปลากราย + ผัดวุ้นเส้น',  cal:'280 kcal',em:'🍲',imageUrl:'food_png/23.png'},
+    ],
+    noon_snack:[
+      {id:'a3_1',name:'ผลไม้รวม',          cal:'130 kcal',em:'🍎',imageUrl:'food_png/24.png'},
+    ],
+    evening:[
+      {id:'e3_1',name:'ชุดที่ 1 ข้าวหมูทอด/ไก่ทอดกระเทียม',        cal:'290 kcal',em:'🥩',imageUrl:'food_png/25.png'},
+      {id:'e3_2',name:'ชุดที่ 2 ข้าวสวย + ต้มสามรสหมู/ไก่ + แกงจืดหมูสับไข่ลูกรอก',  cal:'270 kcal',em:'🍲',imageUrl:'food_png/26.png'},
+    ],
+  },
+  4: {
+    morning:[
+      {id:'m4_1',name:'ชุดที่ 1 ข้าวต้มหมูทรงเครื่อง + น้ำสมุนไพร',     cal:'200 kcal',em:'🥣',imageUrl:'food_png/27.png'},
+      {id:'m4_2',name:'ชุดที่ 2 Breakfast + น้ำผลไม้',       cal:'165 kcal',em:'🍳',imageUrl:'food_png/28.png'},
+    ],
+    morning_snack:[
+      {id:'s4_1',name:'แซนวิส',         cal:'95 kcal', em:'🥪',imageUrl:'food_png/29.png'},
+      {id:'s4_2',name:'ขนมไทย',     cal:'115 kcal',em:'🍮',imageUrl:'food_png/30.png'},
+    ],
+    noon:[
+      {id:'n4_1',name:'ชุดที่ 1 ก๋วยเตี๊ยวคั่วไก่',  cal:'350 kcal',em:'🍜',imageUrl:'food_png/31.png'},
+      {id:'n4_2',name:'ชุดที่ 2 ข้าวสวย + แกงฟักทองใส่ปลาซาบะ + ไก่ผัดขิง',  cal:'310 kcal',em:'🍛',imageUrl:'food_png/32.png'},
+    ],
+    noon_snack:[
+      {id:'a4_1',name:'ผลไม้รวม',            cal:'70 kcal', em:'🍎',imageUrl:'food_png/33.png'},
+    ],
+    evening:[
+      {id:'e4_1',name:'ชุดที่ 1 ข้าวกระเพราหมู/ไก่ + ไข่ดาว',     cal:'220 kcal',em:'🥘',imageUrl:'food_png/34.png'},
+      {id:'e4_2',name:'ชุดที่ 2 ข้าวสวย + ไก่ต้มขมิ้น + ผัดเครื่องแกงหมู',  cal:'280 kcal',em:'🍛',imageUrl:'food_png/35.png'},
+    ],
+  },
+  5: {
+    morning:[
+      {id:'m5_1',name:'ชุดที่ 1 ข้าวต้มขาว + ยำกุนเชียง + ไก่ทอดกระเทียม',   cal:'185 kcal',em:'🍚',imageUrl:'food_png/36.png'},
+      {id:'m5_2',name:'ชุดที่ 2 Breakfast + น้ำผลไม้',     cal:'260 kcal',em:'🥪',imageUrl:'food_png/37.png'},
+    ],
+    morning_snack:[
+      {id:'s5_1',name:'ขนมซาลาเปาหมูสับ',     cal:'140 kcal',em:'🫓',imageUrl:'food_png/38.png'},
+      {id:'s5_2',name:'ขนมไทย',       cal:'75 kcal', em:'🍮',imageUrl:'food_png/39.png'},
+    ],
+    noon:[
+      {id:'n5_1',name:'ชุดที่ 1 ราดหน้าเส้นหมี่ทะเล/หมู/ไก่',  cal:'370 kcal',em:'🦀',imageUrl:'food_png/40.png'},
+      {id:'n5_2',name:'ชุดที่ 2 ข้าวสวย + ผัดมะระกับไข่ + ต้มข่าไก่',  cal:'300 kcal',em:'🍜',imageUrl:'food_png/41.png'},
+    ],
+    noon_snack:[
+      {id:'a5_1',name:'ผลไม้รวม',     cal:'90 kcal', em:'🍎',imageUrl:'food_png/42.png'},
+    ],
+    evening:[
+      {id:'e5_1',name:'ชุดที่ 1 ข้าวหมูทอดกระเทียม /ผัดผักรวมมิตร',cal:'340 kcal',em:'🍳',imageUrl:'food_png/43.png'},
+      {id:'e5_2',name:'ชุดที่ 2 ข้าวผัดรวมมิตร + ซุปหัวไชเท้า',cal:'200 kcal',em:'🥣',imageUrl:'food_png/44.png'},
+    ],
+  },
+  6: {
+    morning:[
+      {id:'m6_1',name:'ชุดที่ 1 ข้าวต้มไก่ทรงเครื่อง + น้ำสมุนไพร',cal:'220 kcal',em:'🥣',imageUrl:'food_png/45.png'},
+      {id:'m6_2',name:'ชุดที่ 2 Breakfast + โอวัลติล',cal:'170 kcal',em:'🍚',imageUrl:'food_png/46.png'},
+    ],
+    morning_snack:[
+      {id:'s6_1',name:'ซาลาเปาไส้หมูแดง',        cal:'55 kcal', em:'🫓',imageUrl:'food_png/47.png'},
+      {id:'s6_2',name:'ขนมไทย',     cal:'80 kcal', em:'🍮',imageUrl:'food_png/48.png'},
+    ],
+    noon:[
+      {id:'n6_1',name:'ชุดที่ 1 ข้าวผัดขี้เมาไก่ + ไข่ดาว',     cal:'430 kcal',em:'🍚',imageUrl:'food_png/49.png'},
+      {id:'n6_2',name:'ชุดที่ 2 ข้าวสวย+แกงส้มกุ้งกับผักรวม + ไข่เจียว',   cal:'270 kcal',em:'🍜',imageUrl:'food_png/50.png'},
+    ],
+    noon_snack:[
+      {id:'a6_1',name:'ผลไม้รวม', cal:'115 kcal',em:'🍎',imageUrl:'food_png/51.png'},
+    ],
+    evening:[
+      {id:'e6_1',name:'ชุดที่ 1 สุกี้ไก่',      cal:'310 kcal',em:'🥘',imageUrl:'food_png/52.png'},
+      {id:'e6_2',name:'ชุดที่ 2 ข้าวสวย + ผัดมะละกอหมู + คลั่วกลิ้งหมูสับ',      cal:'355 kcal',em:'🍛',imageUrl:'food_png/53.png'},
+    ],
+  },
+  0: {
+    morning:[
+      {id:'m0_1',name:'ชุดที่ 1 ข้าวหมูทรงเครื่อง + น้ำสมุนไพร',   cal:'195 kcal',em:'🥣',imageUrl:'food_png/54.png'},
+      {id:'m0_2',name:'ชุดที่ 2 Breakfast + น้ำผลไม้',    cal:'230 kcal',em:'🍳',imageUrl:'food_png/55.png'},
+    ],
+    morning_snack:[
+      {id:'s0_1',name:'ขนมจีบ',        cal:'65 kcal', em:'🫓',imageUrl:'food_png/56.png'},
+      {id:'s0_2',name:'ขนมไทย', cal:'120 kcal',em:'🍮',imageUrl:'food_png/57.png'},
+    ],
+    noon:[
+      {id:'n0_1',name:'ชุดที่ 1 ผัดไทยกุ้งสด', cal:'450 kcal',em:'🍛',imageUrl:'food_png/58.png'},
+      {id:'n0_2',name:'ชุดที่ 2 ข้าวสวย + ผัดผักกวางตุ้งกับหมู + แกงกะทิไก่กับฟัก',     cal:'320 kcal',em:'🍝',imageUrl:'food_png/59.png'},
+    ],
+    noon_snack:[
+      {id:'a0_1',name:'ผลไม้รวม',     cal:'130 kcal',em:'🍎',imageUrl:'food_png/60.png'},
+    ],
+    evening:[
+      {id:'e0_1',name:'ชุดที่ 1 ข้าวสวย + ผัดผักรวมมิตร + ต้มยำปีกบนไก่',cal:'240 kcal',em:'🍲',imageUrl:'food_png/61.png'},
+      {id:'e0_2',name:'ชุดที่ 2 ข้าวสวย + แกงจืดมะระยัดไส้ + ไก่ผัดเครื่องแกง',  cal:'210 kcal',em:'🐟',imageUrl:'food_png/62.png'},
+    ],
+  },
+};
+
+/* ════════════════════════════════════
+   DATA HELPERS
+════════════════════════════════════ */
+const today=()=>new Date().toISOString().slice(0,10);
+const nowH=()=>new Date().getHours();
+const nextDay=ds=>{const d=new Date(ds+'T00:00:00');d.setDate(d.getDate()+1);return d.toISOString().slice(0,10);};
+const thaiDate=ds=>{const d=new Date(ds+'T00:00:00');return `${DAY_FULL[d.getDay()]} ${d.getDate()} ${MONTH_TH[d.getMonth()]} ${d.getFullYear()+543}`;};
+const escQ=s=>(s||'').replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+const lsGet=k=>{try{return JSON.parse(localStorage.getItem(k)||'null');}catch(e){return null;}};
+const lsSet=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}};
+
+function getCfg(){return lsGet('hosp_cfg')||{};}
+function getRooms(){return _patients;}
+function getOrders(){return lsGet('hosp_orders')||[];}
+function saveOrders(a){lsSet('hosp_orders',a);}
+function getMealTimes(){
+  return lsGet('hosp_mealTimes')||[
+    {key:'morning',name:'มื้อเช้า',em:'🌅',serve:'07:00–08:00',cutoff:null},
+    {key:'morning_snack',name:'ว่างเช้า',em:'☕',serve:'09:30–10:00',cutoff:null},
+    {key:'noon',name:'มื้อกลางวัน',em:'☀️',serve:'11:30–12:30',cutoff:null},
+    {key:'noon_snack',name:'ว่างบ่าย',em:'🍵',serve:'14:00–14:30',cutoff:null},
+    {key:'evening',name:'มื้อเย็น',em:'🌙',serve:'17:00–18:00',cutoff:null},
+  ];
+}
+
+/**
+ * getMenus(dateStr) — ดึงเมนูสำหรับวันที่ระบุ
+ * ลำดับ: hosp_menusByDay[date] → WEEKLY_MENUS[DOW] → WEEKLY_MENUS[1]
+ */
+function getMenus(ds){
+  const allByDay = lsGet('hosp_menusByDay') || {};
+  // custom วันที่ก่อน
+  if(allByDay[ds]) return allByDay[ds];
+  // WEEKLY_MENUS ที่ admin save ไว้ (key: __weekly_0 ถึง __weekly_6)
+  const dow = new Date(ds+'T00:00:00').getDay();
+  if(allByDay['__weekly_'+dow]) return JSON.parse(JSON.stringify(allByDay['__weekly_'+dow]));
+  // fallback ในกรณีที่ยังไม่เคย save เลย
+  return JSON.parse(JSON.stringify(WEEKLY_MENUS[dow] || WEEKLY_MENUS[1]));
+}
+
+/**
+ * imgTag(imageUrl, em, cls, alt) — สร้าง HTML รูปภาพหรือ emoji placeholder
+ */
+function imgTag(imageUrl, em, wrapCls, imgCls, phCls){
+  if(imageUrl && imageUrl.trim()){
+    return `<div class="${wrapCls}">
+      <img class="${imgCls}" src="${imageUrl}" alt="" loading="lazy"
+        onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
+      <div class="${phCls}" style="display:none;">${em||'🍽️'}</div>
+    </div>`;
+  }
+  return `<div class="${wrapCls}"><div class="${phCls}">${em||'🍽️'}</div></div>`;
+}
+
+/* ════════════════════════════════════
+   STATE
+════════════════════════════════════ */
+let cfg = getCfg();
+let _patients = [];   // ผู้ป่วย admit ปัจจุบัน จาก API (ยังไม่ D/S)
+let curPage = 'rooms';
+let wardFil = 'ALL';
+let histFil = 'ALL';
+let histDateFrom = '';   // วันเริ่มต้น ISO (YYYY-MM-DD)
+let histDateTo   = '';   // วันสิ้นสุด ISO (YYYY-MM-DD)
+let histBldgFil = 'ALL'; // ตึกที่กรอง
+let activeRoomId = null;
+let viewOnly = false;
+let mealDate = today();
+let sel = {};   // {mealKey:{menuId,menuName,menuEm,menuImg,note}}
+let qrScanner = null, qrRunning = false;
+let m7Day = today();
+
+/* ════════════════════════════════════
+   FETCH PATIENTS FROM API
+   ดึงผู้ป่วย admit ที่ยังไม่ D/S จาก HOSxP
+   Logic เหมือน admin (dedup ด้วย AN)
+════════════════════════════════════ */
+async function fetchPatients() {
+  const apiUrl = cfg.apiurl || getCfg().apiurl || 'http://localhost:4000';
+  const bar   = document.getElementById('apiBar');
+  const badge = document.getElementById('apiBadge');
+  if(bar)   bar.classList.add('show');
+  if(badge){ badge.className='api-badge'; badge.textContent='⏳ กำลังโหลด...'; }
+  try {
+    const res  = await fetch(`${apiUrl}/api/hosxp/admits`, { signal: AbortSignal.timeout(8000) });
+    const json = await res.json();
+    if(!json.success) throw new Error('API ตอบกลับผิดปกติ');
+
+    // dedup ด้วย AN เหมือน admin
+    const patMap = {};
+    json.data.forEach(p => { patMap[p.an] = p; });
+
+    _patients = Object.values(patMap).map(p => ({
+      id:       p.an,          // AN = unique key
+      ward:     p.ward_name,
+      roomName: p.room_no,     // เลขห้องจริง เช่น ห้องพิเศษ 101
+      pt:       p.ptname,
+      hn:       p.hn,
+      an:       p.an,
+      bed:      p.bed_no,
+      religion: p.religion,
+      admit:    p.admit_date,
+      dc:       p.dchdate || '',
+      dataSource: 'hosxp',
+    }));
+
+    if(badge){
+      badge.className = 'api-badge ok';
+      badge.textContent = `✅ ${_patients.length} ราย`;
+    }
+    if(curPage === 'rooms') renderRooms();
+    updateBadges();
+  } catch(e) {
+    if(badge){
+      badge.className = 'api-badge err';
+      badge.textContent = '❌ API ไม่พร้อม';
+    }
+    toast('⚠️ โหลดข้อมูลไม่ได้: ' + e.message, 'err');
+    if(curPage === 'rooms') renderRooms();
+  } finally {
+    if(bar) bar.classList.remove('show');
+  }
+}
+
+/* ════════════════════════════════════
+   REAL-TIME SYNC (BroadcastChannel + storage)
+════════════════════════════════════ */
+try{
+  const bc = new BroadcastChannel('hosp_admin_sync');
+  bc.onmessage = () => { cfg = getCfg(); onDataChange(); };
+}catch(e){}
+
+window.addEventListener('storage', e => {
+  if(['hosp_rooms','hosp_cfg','hosp_menusByDay','hosp_mealTimes','hosp_orders'].includes(e.key)){
+    cfg = getCfg();
+    onDataChange();
+  }
+});
+
+function onDataChange(){
+  updateBadges();
+  if(curPage === 'rooms')    renderRooms();
+  if(curPage === 'menu7')    renderMenu7();
+  if(curPage === 'dc')       renderDC();
+  if(curPage === 'hist')     renderHist();
+  if(activeRoomId)           renderOrderBody();
+  const hn = document.getElementById('hospName');
+  if(hn) hn.textContent = cfg.hospname || 'โรงพยาบาล';
+}
+
+/* ════════════════════════════════════
+   NAV
+════════════════════════════════════ */
+function showPage(name, el){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('show'));
+  document.querySelectorAll('.bn').forEach(b=>b.classList.remove('active'));
+  // clear FAB active too
+  const fab=document.getElementById('bn-qr');
+  if(fab) fab.classList.remove('active');
+  document.getElementById('page-'+name).classList.add('show');
+  if(el) el.classList.add('active');
+  curPage = name;
+  if(name !== 'qr') stopQR();
+  if(name === 'rooms')  renderRooms();
+  if(name === 'menu7'){ buildDayStrip(); renderMenu7(); }
+  if(name === 'dc')     renderDC();
+  if(name === 'hist')   renderHist();
+}
+
+function updateBadges(){
+  const t = today();
+  const rooms = getRooms();
+  // DC badge — นับจาก rooms live
+  const dcCnt = rooms.filter(r => {
+    if(!r.pt || !r.dc) return false;
+    const iso = thaiToIso(r.dc) || (r.dc.match(/^\d{4}-\d{2}-\d{2}/) ? r.dc.slice(0,10) : '');
+    return iso && iso <= t;
+  }).length;
+  const ddot = document.getElementById('dot-dc');
+  if(ddot){ ddot.textContent = dcCnt||''; ddot.classList.toggle('show', dcCnt > 0); }
+  const ords = getOrders().filter(o=>o.mealDate===t&&o.status!=='cancelled').length;
+  const hdot = document.getElementById('dot-hist');
+  if(hdot){ hdot.textContent = ords||''; hdot.classList.toggle('show', ords > 0); }
+}
+
+/* ════════════════════════════════════
+   DATE UTILS
+════════════════════════════════════ */
+function thaiToIso(thai){
+  if(!thai || typeof thai !== 'string') return '';
+  const m = thai.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  if(!m) return '';
+  let y = parseInt(m[3]);
+  if(y > 2400) y = y - 543;
+  return `${y}-${m[2].padStart(2,'0')}-${m[1].padStart(2,'0')}`;
+}
+
+/* ════════════════════════════════════
+   PAGE 1: ROOMS
+════════════════════════════════════ */
+function renderRooms(){
+  const rooms = getRooms();
+  const t = today();
+  const q = (document.getElementById('roomSearch')?.value || '').toLowerCase();
+
+  // Ward chips
+  const wards = [...new Set(rooms.map(r=>r.ward).filter(Boolean))];
+  const wr = document.getElementById('wardRow');
+  if(wr){
+    wr.innerHTML = `<button class="wbtn${wardFil==='ALL'?' act':''}" onclick="setWard('ALL',this)">ทุก Ward</button>`
+      + wards.map(w=>`<button class="wbtn${wardFil===w?' act':''}" onclick="setWard('${escQ(w)}',this)">${w}</button>`).join('');
+  }
+
+  const todayOrdAll = getOrders().filter(o=>o.mealDate===t&&o.status!=='cancelled');
+  // DC rooms live
+  const dcRooms = rooms.filter(r=>{
+    if(!r.pt||!r.dc) return false;
+    const iso = thaiToIso(r.dc)||(r.dc.match(/^\d{4}-\d{2}-\d{2}/)?r.dc.slice(0,10):'');
+    return iso && iso <= t;
+  });
+
+  const dcIdSet = new Set(dcRooms.map(r=>r.id));
+  document.getElementById('st-total').textContent = rooms.length;
+  // มีผู้ป่วย = มีชื่อ AND ไม่ใช่ D/C วันนี้หรือเลยกำหนด
+  document.getElementById('st-occ').textContent   = rooms.filter(r=>r.pt && !dcIdSet.has(r.id)).length;
+  document.getElementById('st-ord').textContent   = todayOrdAll.length;
+  document.getElementById('st-dc').textContent    = dcRooms.length;
+
+  renderTodaySummary(todayOrdAll);
+
+  // Filter
+  const filtered = rooms.filter(r=>{
+    const wOk = wardFil==='ALL' || r.ward===wardFil;
+    const qOk = !q || [r.roomName,r.pt,r.ward,r.hn,r.an].some(v=>(v||'').toLowerCase().includes(q));
+    return wOk && qOk;
+  });
+
+  const out = document.getElementById('roomsOut');
+  if(!filtered.length){
+    out.innerHTML=`<div class="empty"><div class="empty-ic">🔍</div><div class="empty-t">ไม่พบห้องที่ค้นหา</div></div>`;
+    return;
+  }
+
+  const byWard = {};
+  filtered.forEach(r=>{ if(!byWard[r.ward]) byWard[r.ward]=[]; byWard[r.ward].push(r); });
+
+  out.innerHTML = Object.entries(byWard).map(([ward,list])=>{
+    // นับเฉพาะผู้ป่วยที่ไม่ใช่ D/C
+    const occ = list.filter(r=>r.pt && !dcIdSet.has(r.id)).length;
+    const cards = list.map(r=>{
+      const dcIso = thaiToIso(r.dc)||(r.dc&&r.dc.match(/^\d{4}-\d{2}-\d{2}/)?r.dc.slice(0,10):'');
+      const isDCToday = !!(dcIso && dcIso === t);
+      const isDCOver  = !!(dcIso && dcIso < t);
+      const isAnyDC   = isDCToday || isDCOver;
+      const cls = isAnyDC ? 'rc dcday' : r.pt ? 'rc occ' : 'rc';
+      const tag = isDCOver
+        ? `<span class="rc-tag tag-dc">⚠️ เลยกำหนด</span>`
+        : isDCToday ? `<span class="rc-tag tag-dc">⚠️ D/C วันนี้</span>`
+        : r.pt ? `<span class="rc-tag tag-occ">● มีผู้ป่วย</span>`
+        : `<span class="rc-tag tag-empty">○ ว่าง</span>`;
+
+      const todayOrds = getOrders().filter(o=>o.room===r.id&&o.mealDate===t&&o.status!=='cancelled');
+      const ordSet = new Set(todayOrds.map(o=>o.mealKey));
+      let ordChips = '';
+      if(r.pt){
+        ordChips = `<div class="rc-orders-row">
+          ${MEAL_KEYS.map(k=>`<span class="rc-ord-chip${ordSet.has(k)?'':' no-ord'}" title="${MEAL_NAMES[k]}">${MEAL_EM[k]}</span>`).join('')}
+          ${todayOrds.length>0?`<span style="font-size:9px;color:var(--teal);font-weight:600;padding:2px 0;">${todayOrds.length} มื้อ</span>`:''}
+        </div>`;
+      }
+
+      return `<div class="${cls}" onclick="openRoom('${escQ(r.id)}', true)">
+        <div class="rc-id">${r.roomName||r.id}</div>
+        <div class="rc-ward">${ward}</div>
+        ${r.pt
+          ? `<div style="display:flex;align-items:center;gap:5px;margin-bottom:3px;flex-wrap:wrap;">
+               <span class="rc-pt-name" style="margin-bottom:0;">${r.pt}</span>${tag}
+             </div>
+             <div class="rc-hn-row">
+               ${r.hn?`<span class="rc-id-hn">HN ${r.hn}</span>`:''}
+               ${r.an?`<span class="rc-id-an">AN ${r.an}</span>`:''}
+             </div>${ordChips}`
+          : `<div style="display:flex;align-items:center;gap:5px;"><div class="rc-pt-empty">ไม่มีผู้ป่วย</div>${tag}</div>`}
+        <span class="rc-arr">›</span>
+      </div>`;
+    }).join('');
+
+    return `<div class="ward-group">
+      <div class="ward-group-hd">🏥 ${ward} <span style="font-weight:400;">(${occ}/${list.length})</span></div>
+      <div class="rooms-grid">${cards}</div>
+    </div>`;
+  }).join('');
+}
+
+function renderTodaySummary(ords){
+  const el = document.getElementById('todaySummary');
+  if(!el) return;
+  if(!ords||!ords.length){ el.innerHTML=''; return; }
+  const sorted = [...ords].sort((a,b)=>new Date(b.orderedAt)-new Date(a.orderedAt));
+  const isOpen = document.getElementById('ts-body')?.classList.contains('show');
+  el.innerHTML = `<div class="today-sum">
+    <div class="ts-hd" onclick="toggleTS()">
+      <div class="ts-hd-title">🍽️ รายการสั่งอาหารวันนี้</div>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <span class="ts-hd-cnt">${ords.length} รายการ</span>
+        <span class="ts-hd-arrow${isOpen?' open':''}" id="ts-arrow">▼</span>
+      </div>
+    </div>
+    <div class="ts-body${isOpen?' show':''}" id="ts-body">
+      ${sorted.map(o=>{
+        const hasImg = o.menuImg && o.menuImg.trim();
+        const thumbHtml = hasImg
+          ? `<img class="ts-thumb" src="${o.menuImg}" alt="" loading="lazy" onerror="this.style.display='none';">`
+          : `<div class="ts-em">${o.menuEm||MEAL_EM[o.mealKey]||'🍽️'}</div>`;
+        return `<div class="ts-row" onclick="openRoom('${escQ(o.room)}', true)">
+          ${thumbHtml}
+          <div class="ts-info">
+            <div class="ts-menu">${o.menuName}</div>
+            <div class="ts-meta">
+              <span>${MEAL_EM[o.mealKey]||''} ${MEAL_NAMES[o.mealKey]||o.mealKey}</span>
+              ${o.patientName?`<span>👤 ${o.patientName}</span>`:''}
+              ${o.note?`<span>💬 ${o.note}</span>`:''}
+            </div>
+          </div>
+          <div class="ts-right">
+            <div class="ts-room">ห้อง ${(getRooms().find(r=>r.id===o.room)||{}).roomName||o.room}</div>
+            <div class="ts-time">${new Date(o.orderedAt).toLocaleTimeString('th-TH',{hour:'2-digit',minute:'2-digit'})}</div>
+          </div>
+        </div>`;
+      }).join('')}
+    </div>
+  </div>`;
+}
+
+let tsSOpen = false;
+function toggleTS(){
+  tsSOpen = !tsSOpen;
+  const body=document.getElementById('ts-body'), arrow=document.getElementById('ts-arrow');
+  if(body) body.classList.toggle('show', tsSOpen);
+  if(arrow) arrow.classList.toggle('open', tsSOpen);
+}
+
+function setWard(w, el){
+  wardFil = w;
+  document.querySelectorAll('.wbtn').forEach(b=>b.classList.remove('act'));
+  if(el) el.classList.add('act');
+  renderRooms();
+}
+
+/* ════════════════════════════════════
+   ORDER MODAL
+════════════════════════════════════ */
+function openRoom(roomId, isViewOnly=false){
+  const rooms_ = getRooms();
+  const room = rooms_.find(r=>r.id===roomId);
+  if(!room) return;
+
+  // ── ตรวจ D/C: ถ้าเลยกำหนดหรือวันนี้ → ล้างห้องและบล็อก ──
+  const _t = today();
+  const _dcIso = (typeof thaiToIso==='function' ? thaiToIso(room.dc||'') : '')
+    || (room.dc&&room.dc.match(/^\d{4}-\d{2}-\d{2}/) ? room.dc.slice(0,10) : '');
+  const _isDC = !!(room.pt && _dcIso && _dcIso <= _t);
+  if(_isDC){
+    toast('🔴 ผู้ป่วยรายนี้ D/C แล้ว ไม่สามารถสั่งอาหารได้', 'err');
+    setTimeout(()=>renderRooms(), 300);
+    return;
+  }
+
+  activeRoomId = roomId;
+  viewOnly = isViewOnly;
+  mealDate = today();
+  sel = {};
+  document.getElementById('om-room').textContent = `${room.roomName||roomId}`;
+  document.getElementById('om-pt').textContent   = room.pt || 'ไม่มีผู้ป่วย';
+  renderOrderBody();
+  document.getElementById('ordModal').classList.add('show');
+}
+
+function closeOrdModal(){
+  document.getElementById('ordModal').classList.remove('show');
+  activeRoomId = null; sel = {};
+  if(curPage === 'rooms') renderRooms();
+}
+
+function renderOrderBody(){
+  if(!activeRoomId) return;
+  const room = getRooms().find(r=>r.id===activeRoomId);
+  if(!room){ document.getElementById('om-body').innerHTML='<div class="empty"><div class="empty-ic">🚫</div><div class="empty-t">ไม่พบห้องนี้</div></div>'; return; }
+
+  const c = cfg;
+  const mts = getMealTimes();
+  const menus = getMenus(mealDate);
+  const ords = getOrders().filter(o=>o.room===activeRoomId&&o.mealDate===mealDate&&o.status!=='cancelled');
+  const ordK = new Set(ords.map(o=>o.mealKey));
+  const isToday = mealDate === today();
+  const curHour = nowH();
+  let html = '';
+
+  // Date selector
+  const td=today(), tm=nextDay(td);
+  html += `<div class="date-sel">
+    <div class="ds-lbl">📅 ${mealDate===td?'วันนี้':thaiDate(mealDate)}</div>
+    <div class="ds-btns">
+      <button class="ds-b${mealDate===td?' act':''}" onclick="swDate('${td}')">วันนี้</button>
+      <button class="ds-b${mealDate===tm?' act':''}" onclick="swDate('${tm}')">พรุ่งนี้</button>
+    </div>
+  </div>`;
+
+  // Patient box
+  if(room.pt){
+    const showDiag = c.showdiag !== false;
+    html += `<div class="pt-box">
+      <div class="pt-em">${room.gender==='หญิง'?'👩':'👨'}</div>
+      <div>
+        <div class="pt-name">${room.pt}</div>
+        <div class="pt-meta">
+          ${room.hn?`<span>HN:${room.hn}</span>`:''}
+          ${room.an?`<span>AN:${room.an}</span>`:''}
+          ${room.ward?`<span>${room.ward}</span>`:''}
+          ${room.bed?`<span>${room.bed}</span>`:''}
+          ${room.admit?`<span>Admit:${room.admit}</span>`:''}
+        </div>
+        ${showDiag&&(room.diag||room.diet)?`<div class="pt-diag">🩺 ${[room.diag,room.diet].filter(Boolean).join(' · ')}</div>`:''}
+      </div>
+    </div>`;
+  }
+
+  // ── บล็อก D/C ──
+  const _dcIso2 = (typeof thaiToIso==='function' ? thaiToIso(room.dc||'') : '')
+    || (room.dc&&room.dc.match(/^\d{4}-\d{2}-\d{2}/) ? room.dc.slice(0,10) : '');
+  const _isRoomDC = !!(room.pt && _dcIso2 && _dcIso2 <= today());
+  if(_isRoomDC){
+    const _dcDisplay = room.dc || _dcIso2;
+    html += `<div style="margin:16px 0;padding:16px;background:#fef2f2;border:1.5px solid #fecaca;border-radius:12px;text-align:center;">
+      <div style="font-size:28px;margin-bottom:8px;">🔴</div>
+      <div style="font-size:15px;font-weight:700;color:#dc2626;margin-bottom:4px;">ผู้ป่วย Discharge แล้ว</div>
+      <div style="font-size:12px;color:#64748b;">D/C: ${_dcDisplay}</div>
+      <div style="font-size:11px;color:#64748b;margin-top:4px;">ไม่สามารถสั่งอาหารได้</div>
+    </div>`;
+    document.getElementById('om-body').innerHTML = html;
+    document.getElementById('om-cta').style.display = 'none';
+    return;
+  }
+
+  // ── VIEW-ONLY: แสดงสรุปแต่ละมื้อ ──
+  if(viewOnly){
+    MEAL_KEYS.forEach(key=>{
+      const mt = mts.find(m=>m.key===key) || {};
+      const isOrd = ordK.has(key);
+      const ordObj = ords.find(o=>o.mealKey===key);
+      const badge = isOrd
+        ? `<span class="mbadge mb-done">✅ สั่งแล้ว</span>`
+        : `<span class="mbadge" style="background:var(--gray-pale);color:var(--text-soft);">— ยังไม่สั่ง</span>`;
+      html += `<div class="meal-sec">
+        <div class="meal-hd">
+          <span style="font-size:16px;">${mt.em||MEAL_EM[key]}</span>
+          <span class="meal-title">${mt.name||MEAL_NAMES[key]}</span>
+          ${badge}
+          <span class="meal-srv">${mt.serve||''}</span>
+        </div>`;
+      if(isOrd){
+        const hasImg = ordObj?.menuImg && ordObj.menuImg.trim();
+        html += `<div class="ordered-box">
+          ${hasImg
+            ? `<img class="ob-img" src="${ordObj.menuImg}" loading="lazy" onerror="this.style.display='none';">`
+            : `<div class="ob-em">${ordObj?.menuEm||'🍽️'}</div>`}
+          <div style="flex:1;min-width:0;">
+            <div class="ob-name">${ordObj?.menuName||'—'}</div>
+            <div class="ob-sub">สั่ง ${new Date(ordObj?.orderedAt||0).toLocaleTimeString('th-TH',{hour:'2-digit',minute:'2-digit'})}${ordObj?.note?' · '+ordObj.note:''}</div>
+          </div>
+        </div>`;
+      } else {
+        html += `<div class="closed-box" style="color:var(--text-soft);background:var(--gray-pale);border-color:var(--gray-lt);">ยังไม่มีรายการสั่งอาหารมื้อนี้</div>`;
+      }
+      html += `</div>`;
+    });
+    document.getElementById('om-body').innerHTML = html;
+    document.getElementById('om-cta').style.display = 'none';
+    return;
+  }
+
+  // ── ORDER MODE: เลือกเมนูและสั่งได้ ──
+  let anyOpen = false;
+  MEAL_KEYS.forEach(key=>{
+    const mt = mts.find(m=>m.key===key) || {};
+    const mlist = menus[key] || [];
+    const isOrd = ordK.has(key);
+    const isOpen = !isToday || mt.cutoff == null || curHour < mt.cutoff;
+    const ordObj = ords.find(o=>o.mealKey===key);
+    if(isOpen) anyOpen = true;
+
+    const badge = isOrd
+      ? `<span class="mbadge mb-done">✅ สั่งแล้ว</span>`
+      : isOpen ? `<span class="mbadge mb-open">🔓 เปิด</span>`
+      : `<span class="mbadge mb-closed">🔒 ปิด</span>`;
+
+    html += `<div class="meal-sec">
+      <div class="meal-hd">
+        <span style="font-size:16px;">${mt.em||MEAL_EM[key]}</span>
+        <span class="meal-title">${mt.name||MEAL_NAMES[key]}</span>
+        ${badge}
+        <span class="meal-srv">${mt.serve||''}</span>
+      </div>`;
+
+    if(isOrd){
+      const hasImg = ordObj?.menuImg && ordObj.menuImg.trim();
+      html += `<div class="ordered-box">
+        ${hasImg
+          ? `<img class="ob-img" src="${ordObj.menuImg}" loading="lazy" onerror="this.style.display='none';">`
+          : `<div class="ob-em">${ordObj?.menuEm||'🍽️'}</div>`}
+        <div style="flex:1;min-width:0;">
+          <div class="ob-name">${ordObj?.menuName||'—'}</div>
+          <div class="ob-sub">สั่ง ${new Date(ordObj?.orderedAt||0).toLocaleTimeString('th-TH',{hour:'2-digit',minute:'2-digit'})}${ordObj?.note?' · '+ordObj.note:''}</div>
+        </div>
+        ${isOpen?`<button class="ob-chg" onclick="chgOrd('${key}')">เปลี่ยน</button>`:''}
+      </div>`;
+    } else if(!isOpen){
+      html += `<div class="closed-box">🔒 ปิดรับออเดอร์แล้ว · รับถึง ${mt.cutoff != null ? mt.cutoff+'.00 น.' : '—'}</div>`;
+    } else {
+      html += `<div class="menu-grid${c.showcal===false?' cal-hidden':''}">`;
+      mlist.forEach(m=>{
+        const isSel = sel[key]?.menuId === m.id;
+        const hasImg = m.imageUrl && m.imageUrl.trim();
+        if(hasImg){
+          html += `<div class="mc${isSel?' sel':''}" onclick="pickMenu('${key}','${escQ(m.id)}','${escQ(m.name)}','${escQ(m.em||'🍽️')}','${escQ(m.imageUrl||'')}')">
+            <div class="mc-img-wrap">
+              <img class="mc-img" src="${m.imageUrl}" alt="${m.name}" loading="lazy"
+                onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
+              <div class="mc-img-placeholder" style="display:none;">${m.em||'🍽️'}</div>
+            </div>
+            <span class="mc-em-tag">${m.em||'🍽️'}</span>
+            <div class="mc-tick">✓</div>
+            <div class="mc-body">
+              <div class="mc-name">${m.name}</div>
+              <div class="mc-cal">🔥 ${m.cal||'—'}</div>
+            </div>
+          </div>`;
+        } else {
+          html += `<div class="mc no-img${isSel?' sel':''}" onclick="pickMenu('${key}','${escQ(m.id)}','${escQ(m.name)}','${escQ(m.em||'🍽️')}','')">
+            <div class="mc-tick" style="top:6px;right:6px;">✓</div>
+            <span class="mc-em-big">${m.em||'🍽️'}</span>
+            <div class="mc-name">${m.name}</div>
+            <div class="mc-cal">🔥 ${m.cal||'—'}</div>
+          </div>`;
+        }
+      });
+      html += `</div>`;
+      html += `<div class="note-sec${c.shownote===false?' note-hidden':''}">
+        <div class="note-lbl">💬 หมายเหตุ</div>
+        <textarea class="note-inp" id="note-${key}" rows="2" placeholder="ไม่เผ็ด, ไม่เอาผัก..."
+          oninput="updNote('${key}',this.value)">${sel[key]?.note||''}</textarea>
+      </div>`;
+    }
+    html += `</div>`;
+  });
+
+  document.getElementById('om-body').innerHTML = html;
+
+  const cta = document.getElementById('om-cta');
+  const btn = document.getElementById('om-btn');
+  if(anyOpen){
+    cta.style.display = 'block';
+    const pend = Object.keys(sel).filter(k=>sel[k]?.menuId&&!ordK.has(k)).length;
+    btn.disabled = pend === 0;
+    btn.textContent = pend > 0 ? `🍽️ สั่ง ${pend} มื้อ — กดยืนยัน` : 'เลือกเมนูก่อน';
+  } else {
+    cta.style.display = 'none';
+  }
+}
+
+function pickMenu(key, menuId, menuName, menuEm, menuImg){
+  if(!sel[key]) sel[key] = {};
+  if(sel[key].menuId === menuId) sel[key] = {};
+  else sel[key] = { menuId, menuName, menuEm, menuImg: menuImg||'', note: sel[key].note||'' };
+  renderOrderBody();
+  // restore textarea notes
+  MEAL_KEYS.forEach(k=>{
+    const el = document.getElementById('note-'+k);
+    if(el && sel[k]) el.value = sel[k].note || '';
+  });
+}
+
+function updNote(key, val){ if(!sel[key]) sel[key]={}; sel[key].note = val; }
+function swDate(ds){ mealDate=ds; sel={}; renderOrderBody(); }
+function chgOrd(key){
+  const orders = getOrders();
+  const idx = orders.findIndex(o=>o.room===activeRoomId&&o.mealDate===mealDate&&o.mealKey===key&&o.status!=='cancelled');
+  if(idx !== -1){ orders[idx].status = 'cancelled'; saveOrders(orders); }
+  sel[key] = {};
+  renderOrderBody();
+}
+
+function openSheet(){
+  const room = getRooms().find(r=>r.id===activeRoomId) || {};
+  const ords = getOrders().filter(o=>o.room===activeRoomId&&o.mealDate===mealDate&&o.status!=='cancelled');
+  const ordK = new Set(ords.map(o=>o.mealKey));
+  const pend = Object.entries(sel).filter(([k,v])=>v.menuId&&!ordK.has(k));
+  if(!pend.length) return;
+
+  // Thumbnails in confirm sheet
+  const thumbsHtml = pend.map(([k,v])=>{
+    const hasImg = v.menuImg && v.menuImg.trim();
+    return `<div class="sh-thumb-item">
+      ${hasImg
+        ? `<img class="sh-thumb-img" src="${v.menuImg}" loading="lazy" onerror="this.style.display='none';">`
+        : `<div style="width:54px;height:54px;border-radius:var(--rs);background:var(--gray-pale);display:flex;align-items:center;justify-content:center;font-size:24px;">${v.menuEm||'🍽️'}</div>`}
+      <span class="sh-thumb-lbl">${v.menuName}</span>
+    </div>`;
+  }).join('');
+  document.getElementById('sh-thumbs').innerHTML = thumbsHtml;
+  document.getElementById('sh-menu').innerHTML = pend.map(([k,v])=>`${v.menuEm} ${v.menuName}`).join('<br>');
+  document.getElementById('sh-sub').innerHTML =
+    `ห้อง ${activeRoomId}${room.pt?' · '+room.pt:''}<br>`
+    + pend.map(([k])=>MEAL_NAMES[k]).join(' · ');
+  document.getElementById('ov-cf').classList.add('show');
+}
+
+function confirmOrder(){
+  const room = getRooms().find(r=>r.id===activeRoomId) || {};
+  const orders = getOrders();
+  const ordK = new Set(orders.filter(o=>o.room===activeRoomId&&o.mealDate===mealDate&&o.status!=='cancelled').map(o=>o.mealKey));
+  let added = 0;
+  const batchAt = new Date().toISOString(); // timestamp เดียวกันทุกมื้อในการสั่งครั้งนี้
+  Object.entries(sel).forEach(([key,v])=>{
+    if(!v.menuId || ordK.has(key)) return;
+  orders.unshift({
+      room: activeRoomId,   // ✅ เก็บ id จริง
+      roomName: room.roomName || activeRoomId, // ✅ เก็บชื่อห้อง
+      wardName: room.ward || '',
+      bedNo: room.bed || '',
+      patientName: room.pt || '',
+      hn: room.hn || '',
+      an: room.an || '',
+      admitDate: room.admit || '',
+      dchdate: room.dc || '',
+      religion: room.religion || '',
+      mealDate,
+      mealKey: key,
+      mealName: MEAL_NAMES[key] || key,
+      menuId: v.menuId,
+      menuName: v.menuName,
+      menuEm: v.menuEm || '🍽️',
+      menuImg: v.menuImg || '',
+      note: v.note || '',
+      status: 'active',
+      orderedAt: batchAt,
+      orderedBy: 'staff',
+    });
+    added++;
+  });
+  if(!added){ closeOv(); return; }
+  saveOrders(orders);
+  sel = {};
+  closeOv();
+  renderOrderBody();
+  updateBadges();
+  toast(`✅ สั่งอาหาร ${added} มื้อเรียบร้อย`, 'ok');
+}
+
+/* ════════════════════════════════════
+   PAGE 2: 7-DAY MENU (with images)
+════════════════════════════════════ */
+function buildDayStrip(){
+  const strip = document.getElementById('dayStrip');
+  const allM = lsGet('hosp_menusByDay') || {};
+  const days = [];
+  const base = new Date();
+  for(let i=0;i<7;i++){ const d=new Date(base); d.setDate(base.getDate()+i); days.push(d.toISOString().slice(0,10)); }
+  strip.innerHTML = days.map((ds,i)=>{
+    const d = new Date(ds+'T00:00:00');
+    const hasCustom = !!allM[ds];
+    const isAct = ds === m7Day;
+    return `<button class="dbtn${isAct?' act':''}${hasCustom?' custom':''}" id="db-${ds}" onclick="setM7Day('${ds}')">
+      <span class="db-dow">${DAY_TH[d.getDay()]}</span>
+      <span class="db-date">${d.getDate()}</span>
+      <span class="db-month">${MONTH_TH[d.getMonth()]}</span>
+      ${i===0?'<span style="font-size:8px;opacity:.8;">วันนี้</span>':''}
+      <div class="db-custom"></div>
+    </button>`;
+  }).join('');
+}
+
+function setM7Day(ds){
+  m7Day = ds;
+  document.querySelectorAll('.dbtn').forEach(b=>b.classList.remove('act'));
+  const btn = document.getElementById('db-'+ds);
+  if(btn) btn.classList.add('act');
+  renderMenu7();
+}
+
+function renderMenu7(){
+  const mts = getMealTimes();
+  const menus = getMenus(m7Day);
+  const d = new Date(m7Day+'T00:00:00');
+  const isToday = m7Day === today();
+  const out = document.getElementById('menu7Out');
+
+  out.innerHTML = `<div style="font-size:13px;font-weight:700;margin-bottom:12px;color:var(--amber);">
+    ${DAY_FULL[d.getDay()]} ${d.getDate()} ${MONTH_TH[d.getMonth()]} ${d.getFullYear()+543}
+    ${isToday?'<span style="font-size:10px;background:var(--amber-pale);color:var(--amber);padding:2px 8px;border-radius:8px;margin-left:6px;">วันนี้</span>':''}
+  </div>`
+  + MEAL_KEYS.map(key=>{
+    const mt = mts.find(m=>m.key===key) || {};
+    const mlist = menus[key] || [];
+    return `<div class="m7-card">
+      <div class="m7-hd">
+        <span class="m7-em">${mt.em||MEAL_EM[key]}</span>
+        <span class="m7-name">${mt.name||MEAL_NAMES[key]}</span>
+        ${mt.serve?`<span class="m7-srv">${mt.serve}</span>`:''}
+        <span class="m7-cnt">${mlist.length} เมนู</span>
+      </div>
+      <div class="m7-grid">
+        ${mlist.map(m=>{
+          const hasImg = m.imageUrl && m.imageUrl.trim();
+          return `<div class="m7-item${hasImg?'':' no-img'}">
+            ${hasImg ? `<div class="m7-img-wrap">
+              <img class="m7-img" src="${m.imageUrl}" alt="${m.name}" loading="lazy"
+                onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
+              <div class="m7-img-ph" style="display:none;">${m.em||'🍽️'}</div>
+            </div>` : ''}
+            <div class="m7-body">
+              <div class="m7-ic">${m.em||'🍽️'}</div>
+              <div class="m7-nm">${m.name}</div>
+              <div class="m7-cal">🔥 ${m.cal||'—'}</div>
+            </div>
+          </div>`;
+        }).join('')}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+/* ════════════════════════════════════
+   PAGE 3: QR SCANNER
+════════════════════════════════════ */
+function startQR(){
+  document.getElementById('qrViewWrap').style.display='flex';
+  document.getElementById('qrBox').style.display='block';
+  document.getElementById('qrBtnStart').style.display='none';
+  document.getElementById('qrBtnStop').style.display='block';
+  setQRSt('scanning','🔍 กำลังสแกน...');
+  qrScanner = new Html5Qrcode('qr-reader');
+  qrScanner.start(
+    {facingMode:'environment'},
+    {fps:10, qrbox:{width:200,height:200}},
+    decoded => {
+      stopQR();
+      let roomId = '';
+      try{ const u=new URL(decoded.trim()); roomId=(u.searchParams.get('room')||'').toUpperCase(); }
+      catch(e){ roomId=decoded.trim().toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,12); }
+      if(roomId){
+        // รองรับทั้ง AN และชื่อห้อง (room_no) จาก QR
+        const _qr = getRooms().find(r=>r.id===roomId||(r.roomName||'').toUpperCase()===roomId) || null;
+        const _qrId = _qr ? _qr.id : roomId;
+        setQRSt('ok',`✅ พบห้อง: ${_qr?(_qr.roomName||roomId):roomId}`);
+        setTimeout(()=>{ openRoom(_qrId); showPage('rooms',document.getElementById('bn-rooms')); }, 700);
+      } else {
+        setQRSt('err','❌ QR นี้ไม่ใช่ห้องพัก');
+        setTimeout(()=>setQRSt('','กดสแกนอีกครั้ง'), 2500);
+      }
+    },
+    ()=>{}
+  ).then(()=>qrRunning=true).catch(err=>{ setQRSt('err','❌ ไม่สามารถเปิดกล้อง: '+err); });
+}
+
+function stopQR(){
+  if(qrScanner && qrRunning){ qrScanner.stop().catch(()=>{}); qrRunning=false; }
+  document.getElementById('qrViewWrap').style.display='none';
+  document.getElementById('qrBtnStart').style.display='block';
+  document.getElementById('qrBtnStop').style.display='none';
+}
+
+function setQRSt(type,msg){ const el=document.getElementById('qrSt'); el.textContent=msg; el.className='qr-st'+(type?' '+type:''); }
+
+function goManual(){
+  const v = (document.getElementById('manualRoom')?.value||'').trim().toUpperCase();
+  if(!v){ toast('⚠️ ระบุรหัสห้องก่อน','err'); return; }
+  const room = getRooms().find(r=>r.id===v||(r.roomName||'').toUpperCase()===v||(r.hn||'').toUpperCase()===v);
+  if(!room){ toast(`❌ ไม่พบห้อง "${v}"`,'err'); return; }
+  openRoom(room.id);
+  showPage('rooms', document.getElementById('bn-rooms'));
+  document.getElementById('manualRoom').value = '';
+}
+
+/* ════════════════════════════════════
+   PAGE 4: DISCHARGE
+════════════════════════════════════ */
+function renderDC(){
+  const rooms = getRooms();
+  const t = today();
+  const todayList = [], overList = [], soonList = [];
+
+  rooms.forEach(r=>{
+    if(!r.pt || !r.dc) return;
+    const iso = thaiToIso(r.dc) || (r.dc.match(/^\d{4}-\d{2}-\d{2}/) ? r.dc.slice(0,10) : '');
+    if(!iso) return;
+    const obj = {id:r.id, name:r.pt, dc:iso, ward:r.ward, hn:r.hn, an:r.an, admit:r.admit, savedAt:r.savedAt||'', dataSource:r.dataSource||''};
+    if(iso === t) todayList.push(obj);
+    else if(iso < t) overList.push(obj);
+    else soonList.push(obj);
+  });
+
+  document.getElementById('dc-n-today').textContent = todayList.length;
+  document.getElementById('dc-n-over').textContent  = overList.length;
+
+  const all = [...todayList,...overList,...soonList].sort((a,b)=>a.dc.localeCompare(b.dc));
+  const out = document.getElementById('dcOut');
+
+  if(!all.length){
+    out.innerHTML=`<div class="empty"><div class="empty-ic">✅</div><div class="empty-t">ไม่มีข้อมูล Discharge</div><div class="empty-s">ยังไม่มีผู้ป่วยที่ถูก Discharge</div></div>`;
+    return;
+  }
+
+  const srcMap = {
+    'manual':         {icon:'✍️', label:'บันทึกมือ'},
+    'hosxp':          {icon:'🔗', label:'HOSxP'},
+    'hosxp-autosync': {icon:'🔄', label:'HOSxP Auto'},
+    'auto':           {icon:'⚙️', label:'อัตโนมัติ'},
+  };
+
+  out.innerHTML = all.map(d=>{
+    const isToday=d.dc===t, isOver=d.dc<t;
+    const cls='dc-item'+(isToday?' dc-today':isOver?' dc-over':'');
+    const chip=isToday?`<span class="dc-chip dcc-today">D/C วันนี้</span>`
+      :isOver?`<span class="dc-chip dcc-over">เกินกำหนด</span>`
+      :`<span class="dc-chip dcc-soon">กำลังมา</span>`;
+    // savedAt
+    const src = srcMap[d.dataSource] || {icon:'📝', label:'ระบบ'};
+    const savedAtStr = d.savedAt
+      ? new Date(d.savedAt).toLocaleString('th-TH',{day:'2-digit',month:'2-digit',year:'2-digit',hour:'2-digit',minute:'2-digit'})
+      : '—';
+    return `<div class="${cls}">
+      <div class="dc-ic">${isToday||isOver?'🔴':'🟢'}</div>
+      <div class="dc-info">
+        <div class="dc-name">${d.name||'—'}</div>
+        <div class="dc-room">ห้อง ${d.id}${d.ward?' · '+d.ward:''}</div>
+        <div class="dc-meta">
+          ${d.hn?`<span>HN:${d.hn}</span>`:''}
+          ${d.an?`<span>AN:${d.an}</span>`:''}
+          ${d.admit?`<span>Admit:${d.admit}</span>`:''}
+        </div>
+        <div style="font-size:10px;color:var(--text-soft);margin-top:4px;">
+          ${src.icon} ${src.label} · 🕐 ${savedAtStr}
+        </div>
+      </div>
+      <div class="dc-right"><div class="dc-date">${d.dc}</div>${chip}</div>
+    </div>`;
+  }).join('');
+}
+
+/* ════════════════════════════════════
+   PAGE 5: HISTORY (with thumbnails)
+════════════════════════════════════ */
+
+/* ── แปลง วว/ดด/ปปปป พ.ศ. → YYYY-MM-DD ── */
+function buddhistToIso(str){
+  const m = str.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  if(!m) return null;
+  let y = parseInt(m[3]);
+  if(y > 2400) y -= 543;
+  return `${y}-${m[2].padStart(2,'0')}-${m[1].padStart(2,'0')}`;
+}
+
+/* ── แปลง YYYY-MM-DD → วว/ดด/ปปปป พ.ศ. ── */
+function isoToBuddhist(iso){
+  if(!iso) return '';
+  const p = iso.split('-');
+  if(p.length !== 3) return iso;
+  return `${p[2]}/${p[1]}/${parseInt(p[0])+543}`;
+}
+
+/* ── Auto-format ขณะพิมพ์ 2003 → 20/03 → 20/03/2568 ── */
+function _fmtDateInput(el){
+  let v = el.value.replace(/[^\d]/g,'');
+  if(v.length > 8) v = v.slice(0,8);
+  let fmt = '';
+  if(v.length <= 2)      fmt = v;
+  else if(v.length <= 4) fmt = v.slice(0,2)+'/'+v.slice(2);
+  else                   fmt = v.slice(0,2)+'/'+v.slice(2,4)+'/'+v.slice(4);
+  el.value = fmt;
+  return fmt;
+}
+
+function onHistRangeInput(el, side){
+  const fmt = _fmtDateInput(el);
+  const iso = buddhistToIso(fmt) || null;
+  if(side === 'from') histDateFrom = iso || '';
+  else                histDateTo   = iso || '';
+  const hasAny = !!(histDateFrom || histDateTo);
+  document.getElementById('histClearBtn').classList.toggle('show', hasAny);
+  renderHist();
+}
+
+/* ── ปุ่มลัด: วันนี้ / 7 วัน / 30 วัน ── */
+function setHistRange(fromOffset, toOffset){
+  const toDate   = new Date(); toDate.setDate(toDate.getDate() + toOffset);
+  const fromDate = new Date(); fromDate.setDate(fromDate.getDate() + fromOffset);
+  histDateFrom = fromDate.toISOString().slice(0,10);
+  histDateTo   = toDate.toISOString().slice(0,10);
+  document.getElementById('histDateFrom').value = isoToBuddhist(histDateFrom);
+  document.getElementById('histDateTo').value   = isoToBuddhist(histDateTo);
+  document.getElementById('histClearBtn').classList.add('show');
+  renderHist();
+}
+
+function clearHistDate(){
+  histDateFrom = ''; histDateTo = '';
+  document.getElementById('histDateFrom').value = '';
+  document.getElementById('histDateTo').value   = '';
+  document.getElementById('histClearBtn').classList.remove('show');
+  renderHist();
+}
+
+/* ── สร้าง building chips ── */
+function buildHistBldgRow(){
+  const rooms = getRooms();
+  const allOrders = getOrders();
+  const allWards = [...new Set(allOrders.map(o=>{
+    const r = rooms.find(r=>r.id===o.room);
+    return r ? (r.ward||'') : '';
+  }).filter(Boolean))].sort();
+
+  const row = document.getElementById('histBldgRow');
+  if(!row) return;
+  row.innerHTML = `<button class="hbtn${histBldgFil==='ALL'?' act':''}" onclick="setHistBldg('ALL',this)">🏥 ทุกตึก</button>`
+    + allWards.map(w=>`<button class="hbtn${histBldgFil===w?' act':''}" onclick="setHistBldg('${escQ(w)}',this)">🏢 ${w}</button>`).join('');
+}
+
+function setHistBldg(bldg, el){
+  histBldgFil = bldg;
+  document.querySelectorAll('.hbtn').forEach(b=>b.classList.remove('act'));
+  if(el) el.classList.add('act');
+  renderHist();
+}
+
+function setHF(f, el){
+  histFil = f;
+  document.querySelectorAll('.hf').forEach(b=>b.classList.remove('act'));
+  if(el) el.classList.add('act');
+  renderHist();
+}
+
+function renderHist(){
+  const t = today();
+  const rooms = getRooms();
+  const roomMap = {};
+  rooms.forEach(r=>{ roomMap[r.id] = r; });
+
+  let orders = getOrders().sort((a,b)=>new Date(b.orderedAt)-new Date(a.orderedAt));
+
+  // ── กรองมื้อ ──
+  if(MEAL_KEYS.includes(histFil)) orders = orders.filter(o=>o.mealKey===histFil);
+
+  // ── กรองช่วงวันที่ ──
+  if(histDateFrom) orders = orders.filter(o=> o.mealDate >= histDateFrom);
+  if(histDateTo)   orders = orders.filter(o=> o.mealDate <= histDateTo);
+
+  // ── กรองตึก ──
+  if(histBldgFil !== 'ALL'){
+    orders = orders.filter(o=>{
+      const r = roomMap[o.room];
+      return r && r.ward === histBldgFil;
+    });
+  }
+
+  // ── สร้าง building chips ──
+  buildHistBldgRow();
+
+  const out  = document.getElementById('histOut');
+  const info = document.getElementById('histResultInfo');
+
+  const hasFilter = histDateFrom || histDateTo || histBldgFil !== 'ALL' || histFil !== 'ALL';
+  if(info){
+    if(hasFilter){
+      let rangeStr = '';
+      if(histDateFrom || histDateTo){
+        const f = histDateFrom ? isoToBuddhist(histDateFrom) : '...';
+        const t2 = histDateTo  ? isoToBuddhist(histDateTo)  : '...';
+        rangeStr = ` · 📅 ${f} – ${t2}`;
+      }
+      info.textContent = `พบ ${orders.length} รายการ${rangeStr}`;
+    } else {
+      info.textContent = '';
+    }
+  }
+
+  if(!orders.length){
+    out.innerHTML = (histDateFrom||histDateTo)
+      ? `<div class="empty"><div class="empty-ic">📅</div><div class="empty-t">ไม่พบรายการในช่วงวันที่นี้</div><div class="empty-s">ลองเปลี่ยนช่วงวันที่หรือกด ✕ ล้าง</div></div>`
+      : `<div class="empty"><div class="empty-ic">🍽️</div><div class="empty-t">ยังไม่มีประวัติ</div><div class="empty-s">รายการสั่งอาหารจะปรากฏที่นี่</div></div>`;
+    return;
+  }
+
+  const stchip = o => {
+    const s = o.status||'active';
+    return s==='active'?`<span class="chip chip-ok">✅</span>`:s==='edited'?`<span class="chip chip-edit">✏️</span>`:`<span class="chip chip-cancel">❌</span>`;
+  };
+
+  out.innerHTML = orders.map(o=>{
+    const hasImg = o.menuImg && o.menuImg.trim();
+    const r = roomMap[o.room];
+    const wardLabel = r && r.ward ? `<span>🏢 ${r.ward}</span>` : '';
+    const displayDate = isoToBuddhist(o.mealDate);
+    return `<div class="hi" style="${o.status==='cancelled'?'opacity:.5':''}">
+      ${hasImg
+        ? `<img class="hi-thumb" src="${o.menuImg}" alt="" loading="lazy" onerror="this.style.display='none';">`
+        : `<div class="hi-em">${o.menuEm||MEAL_EM[o.mealKey]||'🍽️'}</div>`}
+      <div class="hi-info">
+        <div class="hi-menu">${o.menuName}</div>
+        <div class="hi-meta">
+          <span>${MEAL_EM[o.mealKey]||''} ${MEAL_NAMES[o.mealKey]||o.mealKey}</span>
+          <span>📅 ${displayDate}</span>
+          <span>🕐 ${new Date(o.orderedAt).toLocaleTimeString('th-TH',{hour:'2-digit',minute:'2-digit'})}</span>
+          ${wardLabel}
+          ${o.patientName?`<span>👤 ${o.patientName}</span>`:''}
+          ${o.note?`<span>💬 ${o.note}</span>`:''}
+        </div>
+      </div>
+      <div class="hi-right">
+        <div class="hi-room">ห้อง ${(roomMap[o.room]||{}).roomName||o.room}</div>
+        <div style="margin-top:3px;">${stchip(o)}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+/* ════════════════════════════════════
+   UTILS
+════════════════════════════════════ */
+function closeOv(){ document.querySelectorAll('.overlay').forEach(o=>o.classList.remove('show')); }
+
+function toast(msg, type='', dur=2600){
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.className = 'toast'+(type?' '+type:'');
+  t.classList.add('show'); clearTimeout(t._t);
+  t._t = setTimeout(()=>t.classList.remove('show'), dur);
+}
+
+setInterval(()=>{
+  const el = document.getElementById('clock');
+  if(el) el.textContent = new Date().toLocaleTimeString('th-TH');
+}, 1000);
+
+/* ════════════════════════════════════
+   INIT
+════════════════════════════════════ */
+(async function init(){
+  cfg = getCfg();
+  document.getElementById('hospName').textContent = cfg.hospname || 'โรงพยาบาล';
+
+  // โหลดผู้ป่วยจาก API ก่อน
+  await fetchPatients();
+
+  // Check URL param ?room=XXX — เปิดห้องตรงจาก QR
+  try{
+    const params = new URLSearchParams(window.location.search);
+    const roomParam = params.get('room');
+    if(roomParam){
+      const rid = roomParam.toUpperCase();
+      setTimeout(()=>{
+        // รองรับทั้ง AN และชื่อห้อง
+        const room = getRooms().find(r=>r.id===rid||(r.roomName||'').toUpperCase()===rid);
+        if(room) openRoom(room.id);
+        else toast(`⚠️ ไม่พบห้อง "${rid}" ในระบบ`, 'err');
+      }, 200);
+    }
+  }catch(e){}
+
+  buildDayStrip();
+  updateBadges();
+  // Auto-refresh ทุก 5 นาที
+  setInterval(fetchPatients, 5 * 60 * 1000);
+})();
+
+
+</script>
+</body>
+</html>

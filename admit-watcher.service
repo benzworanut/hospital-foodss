@@ -1,0 +1,25 @@
+[Unit]
+Description=Hospital Admit Watcher — MOPH LINE Notify
+Documentation=https://github.com/your-repo
+After=network.target postgresql.service
+Wants=network-online.target
+
+[Service]
+# ── แก้ path ให้ตรงกับเครื่อง ──
+WorkingDirectory=/opt/hospital-food
+ExecStart=/usr/bin/python3 /opt/hospital-food/admit_watcher.py
+User=www-data
+Group=www-data
+Restart=always
+RestartSec=10
+
+# stdout/stderr ส่งไป journal (ดูด้วย journalctl -u admit-watcher -f)
+StandardOutput=journal
+StandardError=journal
+
+# Environment (ถ้าใช้ venv)
+# Environment=PATH=/opt/hospital-food/venv/bin
+# ExecStart=/opt/hospital-food/venv/bin/python admit_watcher.py
+
+[Install]
+WantedBy=multi-user.target
