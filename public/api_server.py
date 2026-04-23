@@ -8,9 +8,18 @@ from pydantic import BaseModel
 from typing import Optional
 import psycopg2, psycopg2.extras, configparser, requests, logging
 from datetime import datetime, date as date_type
-
+import os
+import configparser
 config = configparser.ConfigParser()
-config.read("config.ini")
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+CONFIG_PATH = os.path.join(BASE_DIR, "config.ini")
+loaded = config.read(CONFIG_PATH, encoding="utf-8")
+print("CONFIG FILE LOADED:", loaded)
+print("SECTIONS FOUND:", config.sections())
+if "database" not in config:
+    raise Exception(f"Missing [database] in config.ini. Found: {config.sections()}")
+if "moph" not in config:
+    raise Exception(f"Missing [moph] in config.ini. Found: {config.sections()}")
 DB = config["database"]
 MOPH = config["moph"]
 

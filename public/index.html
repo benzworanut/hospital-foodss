@@ -1,0 +1,673 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>ระบบสั่งอาหารผู้ป่วยประกันชีวิต</title>
+<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&family=Noto+Serif+Thai:wght@600;700;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --navy: #0d2444;
+  --blue: #1a56bb;
+  --blue2: #3b82f6;
+  --blue-pale: #eff6ff;
+  --teal: #0e7a5f;
+  --teal2: #10b981;
+  --teal-pale: #ecfdf5;
+  --amber: #b45309;
+  --amber-pale: #fffbeb;
+  --red: #dc2626;
+  --gray-lt: #e2e8f0;
+  --text: #0f172a;
+  --text-soft: #64748b;
+  --white: #fff;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+body {
+  font-family: 'Sarabun', sans-serif;
+  min-height: 100vh;
+  background: var(--navy);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  position: relative;
+}
+
+/* ── BACKGROUND PATTERN ── */
+.bg-pattern {
+  position: fixed;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 80% 60% at 20% 0%, rgba(59,130,246,.18) 0%, transparent 60%),
+    radial-gradient(ellipse 60% 50% at 80% 100%, rgba(14,122,95,.15) 0%, transparent 60%),
+    linear-gradient(160deg, #081a36 0%, #0d2444 45%, #0e1f3a 100%);
+  z-index: 0;
+}
+.bg-grid {
+  position: fixed;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(59,130,246,.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(59,130,246,.05) 1px, transparent 1px);
+  background-size: 40px 40px;
+  z-index: 0;
+}
+.bg-orb {
+  position: fixed;
+  border-radius: 50%;
+  filter: blur(80px);
+  opacity: .25;
+  z-index: 0;
+  animation: orbFloat 8s ease-in-out infinite;
+}
+.orb1 { width: 400px; height: 400px; background: #1a56bb; top: -150px; left: -100px; animation-delay: 0s; }
+.orb2 { width: 300px; height: 300px; background: #0e7a5f; bottom: -100px; right: -80px; animation-delay: 3s; }
+.orb3 { width: 200px; height: 200px; background: #7c3aed; top: 40%; left: 60%; animation-delay: 5s; }
+@keyframes orbFloat {
+  0%, 100% { transform: translateY(0px) scale(1); }
+  50%       { transform: translateY(-30px) scale(1.05); }
+}
+
+/* ── MAIN CARD ── */
+.wrap {
+  position: relative;
+  z-index: 10;
+  width: 100%;
+  max-width: 480px;
+  padding: 20px;
+  animation: pageIn .6s cubic-bezier(.22,1,.36,1) both;
+}
+@keyframes pageIn {
+  from { opacity: 0; transform: translateY(30px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ── LOGO ── */
+.logo-area {
+  text-align: center;
+  margin-bottom: 36px;
+}
+.logo-icon {
+  font-size: 52px;
+  display: block;
+  margin-bottom: 10px;
+  filter: drop-shadow(0 4px 16px rgba(26,86,187,.5));
+  animation: pulse 3s ease-in-out infinite;
+}
+@keyframes pulse {
+  0%, 100% { filter: drop-shadow(0 4px 16px rgba(26,86,187,.5)); }
+  50%       { filter: drop-shadow(0 8px 28px rgba(26,86,187,.8)); }
+}
+.logo-hosp {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: rgba(255,255,255,.4);
+  margin-bottom: 6px;
+}
+.logo-title {
+  font-family: 'Noto Serif Thai', serif;
+  font-size: 22px;
+  font-weight: 800;
+  color: #fff;
+  line-height: 1.3;
+}
+.logo-sub {
+  font-size: 12px;
+  color: rgba(255,255,255,.45);
+  margin-top: 6px;
+}
+
+/* ── CHOICE CARDS ── */
+.choices {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.choice-card {
+  background: rgba(255,255,255,.06);
+  border: 1.5px solid rgba(255,255,255,.1);
+  border-radius: 18px;
+  padding: 22px 24px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  transition: all .25s cubic-bezier(.22,1,.36,1);
+  text-decoration: none;
+  position: relative;
+  overflow: hidden;
+  backdrop-filter: blur(12px);
+}
+.choice-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  transition: opacity .25s;
+  border-radius: inherit;
+}
+.choice-card:hover {
+  transform: translateY(-3px);
+  border-color: rgba(255,255,255,.25);
+  background: rgba(255,255,255,.1);
+  box-shadow: 0 16px 40px rgba(0,0,0,.3);
+}
+.choice-card:active { transform: translateY(0px) scale(.98); }
+
+/* Order card */
+.card-order { animation: cardIn .6s .1s cubic-bezier(.22,1,.36,1) both; }
+.card-order::before { background: linear-gradient(135deg, rgba(16,185,129,.15), rgba(14,122,95,.05)); }
+.card-order:hover::before { opacity: 1; }
+.card-order:hover { border-color: rgba(16,185,129,.4); box-shadow: 0 16px 40px rgba(14,122,95,.2); }
+
+/* Admin card */
+.card-admin { animation: cardIn .6s .2s cubic-bezier(.22,1,.36,1) both; }
+.card-admin::before { background: linear-gradient(135deg, rgba(59,130,246,.15), rgba(26,86,187,.05)); }
+.card-admin:hover::before { opacity: 1; }
+.card-admin:hover { border-color: rgba(59,130,246,.4); box-shadow: 0 16px 40px rgba(26,86,187,.2); }
+
+@keyframes cardIn {
+  from { opacity: 0; transform: translateX(-20px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+.card-icon-wrap {
+  width: 58px;
+  height: 58px;
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 26px;
+  flex-shrink: 0;
+}
+.icon-order { background: rgba(16,185,129,.2); border: 1.5px solid rgba(16,185,129,.3); }
+.icon-admin { background: rgba(59,130,246,.2); border: 1.5px solid rgba(59,130,246,.3); }
+
+.card-text { flex: 1; }
+.card-title {
+  font-family: 'Noto Serif Thai', serif;
+  font-size: 17px;
+  font-weight: 700;
+  color: #fff;
+  margin-bottom: 4px;
+}
+.card-desc {
+  font-size: 12px;
+  color: rgba(255,255,255,.5);
+  line-height: 1.5;
+}
+.card-tag {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: .5px;
+  text-transform: uppercase;
+  padding: 3px 9px;
+  border-radius: 20px;
+  margin-top: 7px;
+  display: inline-block;
+}
+.tag-open { background: rgba(16,185,129,.2); color: #34d399; border: 1px solid rgba(16,185,129,.3); }
+.tag-lock { background: rgba(59,130,246,.2); color: #93c5fd; border: 1px solid rgba(59,130,246,.3); }
+
+.card-arrow {
+  font-size: 18px;
+  color: rgba(255,255,255,.25);
+  flex-shrink: 0;
+  transition: transform .2s, color .2s;
+}
+.choice-card:hover .card-arrow { color: rgba(255,255,255,.6); transform: translateX(4px); }
+
+/* ── FOOTER ── */
+.footer {
+  text-align: center;
+  margin-top: 28px;
+  font-size: 10px;
+  color: rgba(255,255,255,.2);
+  letter-spacing: .5px;
+  animation: fadeIn .8s .4s both;
+}
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+/* ── LOGIN OVERLAY ── */
+.overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.6);
+  z-index: 200;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(6px);
+  padding: 20px;
+}
+.overlay.show { display: flex; }
+
+.login-modal {
+  background: #fff;
+  border-radius: 20px;
+  padding: 32px 28px;
+  width: 100%;
+  max-width: 360px;
+  box-shadow: 0 24px 64px rgba(0,0,0,.4);
+  animation: modalPop .25s cubic-bezier(.22,1,.36,1) both;
+  position: relative;
+}
+@keyframes modalPop {
+  from { transform: scale(.9) translateY(20px); opacity: 0; }
+  to   { transform: scale(1) translateY(0); opacity: 1; }
+}
+
+.modal-icon {
+  width: 52px;
+  height: 52px;
+  background: var(--blue-pale);
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  margin: 0 auto 16px;
+}
+.modal-title {
+  font-family: 'Noto Serif Thai', serif;
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text);
+  text-align: center;
+  margin-bottom: 4px;
+}
+.modal-sub {
+  font-size: 12px;
+  color: var(--text-soft);
+  text-align: center;
+  margin-bottom: 24px;
+}
+
+.f-lbl {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .7px;
+  text-transform: uppercase;
+  color: var(--text-soft);
+  display: block;
+  margin-bottom: 5px;
+}
+.f-ctrl {
+  width: 100%;
+  padding: 11px 14px;
+  border: 1.5px solid var(--gray-lt);
+  border-radius: 10px;
+  font-size: 14px;
+  font-family: 'Sarabun', sans-serif;
+  outline: none;
+  background: #f8fafc;
+  transition: border-color .15s, background .15s;
+  color: var(--text);
+}
+.f-ctrl:focus { border-color: var(--blue2); background: #fff; }
+.f-ctrl.error { border-color: var(--red) !important; background: #fff5f5; }
+
+.f-row { margin-bottom: 14px; }
+
+.pw-wrap { position: relative; }
+.pw-toggle {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font-size: 16px;
+  color: var(--text-soft);
+  padding: 0;
+  line-height: 1;
+}
+
+.err-msg {
+  display: none;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: 12px;
+  color: var(--red);
+  margin-bottom: 14px;
+  align-items: center;
+  gap: 6px;
+}
+.err-msg.show { display: flex; }
+
+.btn-login {
+  width: 100%;
+  padding: 13px;
+  border: none;
+  border-radius: 10px;
+  background: linear-gradient(135deg, var(--navy), var(--blue));
+  color: #fff;
+  font-size: 14px;
+  font-weight: 700;
+  font-family: 'Sarabun', sans-serif;
+  cursor: pointer;
+  transition: all .2s;
+  letter-spacing: .3px;
+}
+.btn-login:hover { opacity: .9; transform: translateY(-1px); box-shadow: 0 6px 20px rgba(26,86,187,.35); }
+.btn-login:active { transform: translateY(0); }
+.btn-login:disabled { opacity: .6; cursor: not-allowed; transform: none; }
+
+.btn-cancel {
+  width: 100%;
+  padding: 11px;
+  border: 1.5px solid var(--gray-lt);
+  border-radius: 10px;
+  background: #fff;
+  color: var(--text-soft);
+  font-size: 13px;
+  font-weight: 600;
+  font-family: 'Sarabun', sans-serif;
+  cursor: pointer;
+  margin-top: 10px;
+  transition: all .15s;
+}
+.btn-cancel:hover { background: #f8fafc; border-color: #cbd5e1; }
+
+/* shake animation for wrong password */
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  20%       { transform: translateX(-8px); }
+  40%       { transform: translateX(8px); }
+  60%       { transform: translateX(-6px); }
+  80%       { transform: translateX(6px); }
+}
+.shake { animation: shake .4s ease; }
+
+/* ── CLOCK ── */
+.clock-wrap {
+  text-align: center;
+  margin-bottom: 24px;
+  animation: fadeIn .6s .05s both;
+}
+.clock {
+  font-family: monospace;
+  font-size: 13px;
+  color: rgba(255,255,255,.35);
+  letter-spacing: 1px;
+}
+</style>
+</head>
+<body>
+
+<!-- Background -->
+<div class="bg-pattern"></div>
+<div class="bg-grid"></div>
+<div class="bg-orb orb1"></div>
+<div class="bg-orb orb2"></div>
+<div class="bg-orb orb3"></div>
+
+<!-- Main Content -->
+<div class="wrap">
+
+  <!-- Clock -->
+  <div class="clock-wrap">
+    <div class="clock" id="clock">--:-- --</div>
+  </div>
+
+  <!-- Logo -->
+  <div class="logo-area">
+    <span class="logo-icon">🏥</span>
+    <div class="logo-hosp" id="hospNameDisplay">โรงพยาบาล</div>
+    <div class="logo-title">ระบบสั่งอาหาร<br>ผู้ป่วยประกันชีวิต</div>
+    <div class="logo-sub">เลือกโหมดการใช้งาน</div>
+  </div>
+
+  <!-- Choices -->
+  <div class="choices">
+
+    <!-- สั่งอาหาร -->
+    <a class="choice-card card-order" href="order.html">
+      <div class="card-icon-wrap icon-order">🍱</div>
+      <div class="card-text">
+        <div class="card-title">สั่งอาหาร</div>
+        <div class="card-desc">สำหรับผู้ป่วยและญาติ<br>เลือกเมนูอาหารแต่ละมื้อ</div>
+        <div class="card-tag tag-open">เข้าใช้งานได้ทันที</div>
+      </div>
+      <div class="card-arrow">›</div>
+    </a>
+
+    <!-- Admin -->
+    <div class="choice-card card-admin" onclick="openLogin()">
+      <div class="card-icon-wrap icon-admin">⚙️</div>
+      <div class="card-text">
+        <div class="card-title">จัดการระบบ (Admin)</div>
+        <div class="card-desc">สำหรับเจ้าหน้าที่<br>จัดการห้อง ออเดอร์ และการตั้งค่า</div>
+        <div class="card-tag tag-lock">🔒 ต้องเข้าสู่ระบบ</div>
+      </div>
+      <div class="card-arrow">›</div>
+    </div>
+
+  </div>
+
+  <!-- Footer -->
+  <div class="footer">
+    ระบบสั่งอาหารผู้ป่วยใน · IT Admin Panel v2.0
+  </div>
+</div>
+
+<!-- Login Modal -->
+<div class="overlay" id="loginOverlay" onclick="handleOverlayClick(event)">
+  <div class="login-modal" id="loginModal">
+    <div class="modal-icon">🔐</div>
+    <div class="modal-title">เข้าสู่ระบบ Admin</div>
+    <div class="modal-sub">กรุณาใส่ชื่อผู้ใช้และรหัสผ่าน</div>
+
+    <div class="err-msg" id="errMsg">
+      <span>⚠️</span>
+      <span id="errText">ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง</span>
+    </div>
+
+    <div class="f-row">
+      <label class="f-lbl" for="loginUser">ชื่อผู้ใช้</label>
+      <input class="f-ctrl" type="text" id="loginUser" placeholder="username" autocomplete="username" autocapitalize="off">
+    </div>
+
+    <div class="f-row">
+      <label class="f-lbl" for="loginPass">รหัสผ่าน</label>
+      <div class="pw-wrap">
+        <input class="f-ctrl" type="password" id="loginPass" placeholder="••••••••" autocomplete="current-password"
+               onkeydown="if(event.key==='Enter')doLogin()">
+        <button class="pw-toggle" type="button" onclick="togglePw()" id="pwToggle" title="แสดง/ซ่อนรหัสผ่าน">👁️</button>
+      </div>
+    </div>
+
+    <button class="btn-login" id="btnLogin" onclick="doLogin()">เข้าสู่ระบบ</button>
+    <button class="btn-cancel" onclick="closeLogin()">ยกเลิก</button>
+  </div>
+</div>
+
+<script>
+// ════════════════════════════════
+//  CONFIG — แก้ตรงนี้ได้เลย
+// ════════════════════════════════
+const ADMIN_CREDENTIALS = [
+  { user: 'admin',    pass: '11357' },
+ // { user: 'it',       pass: 'it@hospital' },
+  // เพิ่ม user ได้ที่นี่
+];
+
+const ADMIN_URL   = 'it-admin-final.html';
+const ORDER_URL   = 'order.html';
+//const MAX_ATTEMPTS = 5;   // ล็อคหลังจากพิมพ์ผิดกี่ครั้ง
+//const LOCKOUT_MIN  = 5;   // ล็อคนานกี่นาที
+
+// ════════════════════════════════
+//  CLOCK
+// ════════════════════════════════
+function updateClock() {
+  const now = new Date();
+  const h = String(now.getHours()).padStart(2,'0');
+  const m = String(now.getMinutes()).padStart(2,'0');
+  const s = String(now.getSeconds()).padStart(2,'0');
+  const DAYS = ['อาทิตย์','จันทร์','อังคาร','พุธ','พฤหัสบดี','ศุกร์','เสาร์'];
+  const d = now.getDate();
+  const mo = now.getMonth()+1;
+  const y = now.getFullYear()+543;
+  document.getElementById('clock').textContent =
+    `วัน${DAYS[now.getDay()]} ${d}/${mo}/${y}  ${h}:${m}:${s}`;
+}
+updateClock();
+setInterval(updateClock, 1000);
+
+// ════════════════════════════════
+//  HOSPITAL NAME from localStorage
+// ════════════════════════════════
+(function loadHospName() {
+  try {
+    const cfg = JSON.parse(localStorage.getItem('hosp_cfg') || '{}');
+    const name = cfg.hospname || '';
+    if (name) document.getElementById('hospNameDisplay').textContent = name;
+  } catch(e) {}
+})();
+
+// ════════════════════════════════
+//  LOCKOUT
+// ════════════════════════════════
+function getLockout() {
+  try { return JSON.parse(sessionStorage.getItem('admin_lockout') || 'null'); } catch(e) { return null; }
+}
+function setLockout(data) {
+  try { sessionStorage.setItem('admin_lockout', JSON.stringify(data)); } catch(e) {}
+}
+function clearLockout() {
+  try { sessionStorage.removeItem('admin_lockout'); } catch(e) {}
+}
+function checkLocked() {
+  const lk = getLockout();
+  if (!lk) return false;
+  const remaining = lk.until - Date.now();
+  if (remaining <= 0) { clearLockout(); return false; }
+  return Math.ceil(remaining / 60000);
+}
+
+// ════════════════════════════════
+//  LOGIN MODAL
+// ════════════════════════════════
+function openLogin() {
+  const locked = checkLocked();
+  if (locked) {
+    showErr(`ถูกล็อคชั่วคราว กรุณารอ ${locked} นาที`);
+    document.getElementById('loginOverlay').classList.add('show');
+    document.getElementById('btnLogin').disabled = true;
+    document.getElementById('loginUser').disabled = true;
+    document.getElementById('loginPass').disabled = true;
+    return;
+  }
+  clearErr();
+  document.getElementById('loginUser').value = '';
+  document.getElementById('loginPass').value = '';
+  document.getElementById('btnLogin').disabled = false;
+  document.getElementById('loginUser').disabled = false;
+  document.getElementById('loginPass').disabled = false;
+  document.getElementById('loginOverlay').classList.add('show');
+  setTimeout(() => document.getElementById('loginUser').focus(), 100);
+}
+
+function closeLogin() {
+  document.getElementById('loginOverlay').classList.remove('show');
+  clearErr();
+}
+
+function handleOverlayClick(e) {
+  if (e.target === document.getElementById('loginOverlay')) closeLogin();
+}
+
+function showErr(msg) {
+  const el = document.getElementById('errMsg');
+  document.getElementById('errText').textContent = msg;
+  el.classList.add('show');
+}
+function clearErr() {
+  document.getElementById('errMsg').classList.remove('show');
+  document.getElementById('loginUser').classList.remove('error');
+  document.getElementById('loginPass').classList.remove('error');
+}
+
+function togglePw() {
+  const inp = document.getElementById('loginPass');
+  const btn = document.getElementById('pwToggle');
+  if (inp.type === 'password') {
+    inp.type = 'text';
+    btn.textContent = '🙈';
+  } else {
+    inp.type = 'password';
+    btn.textContent = '👁️';
+  }
+}
+
+function doLogin() {
+  const locked = checkLocked();
+  if (locked) { showErr(`ถูกล็อคชั่วคราว กรุณารอ ${locked} นาที`); return; }
+
+  const user = document.getElementById('loginUser').value.trim();
+  const pass = document.getElementById('loginPass').value;
+
+  if (!user || !pass) {
+    if (!user) document.getElementById('loginUser').classList.add('error');
+    if (!pass) document.getElementById('loginPass').classList.add('error');
+    showErr('กรุณากรอกชื่อผู้ใช้และรหัสผ่าน');
+    return;
+  }
+
+  // ตรวจสอบ credentials
+  const ok = ADMIN_CREDENTIALS.some(c => c.user === user && c.pass === pass);
+
+  if (ok) {
+    clearLockout();
+    // บันทึก session
+    try { sessionStorage.setItem('admin_auth', JSON.stringify({ user, at: Date.now() })); } catch(e) {}
+    // ไป admin
+    document.getElementById('btnLogin').textContent = '✅ กำลังเข้าสู่ระบบ...';
+    document.getElementById('btnLogin').disabled = true;
+    setTimeout(() => { window.location.href = ADMIN_URL; }, 400);
+  } else {
+    // บันทึก attempt
+    const lk = getLockout() || { attempts: 0, until: 0 };
+    lk.attempts = (lk.attempts || 0) + 1;
+    const remaining = MAX_ATTEMPTS - lk.attempts;
+
+    document.getElementById('loginModal').classList.add('shake');
+    setTimeout(() => document.getElementById('loginModal').classList.remove('shake'), 400);
+    document.getElementById('loginPass').value = '';
+    document.getElementById('loginUser').classList.add('error');
+    document.getElementById('loginPass').classList.add('error');
+
+    if (lk.attempts >= MAX_ATTEMPTS) {
+      lk.until = Date.now() + LOCKOUT_MIN * 60 * 1000;
+      setLockout(lk);
+      document.getElementById('btnLogin').disabled = true;
+      document.getElementById('loginUser').disabled = true;
+      document.getElementById('loginPass').disabled = true;
+      showErr(`พิมพ์ผิดหลายครั้งเกินไป ระบบล็อค ${LOCKOUT_MIN} นาที`);
+    } else {
+      setLockout(lk);
+      showErr(`ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง (เหลือ ${remaining} ครั้ง)`);
+    }
+    setTimeout(() => document.getElementById('loginPass').focus(), 50);
+  }
+}
+
+// กด Escape ปิด modal
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') closeLogin();
+});
+</script>
+</body>
+</html>
