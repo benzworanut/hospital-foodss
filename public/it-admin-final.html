@@ -270,10 +270,10 @@ body{font-family:'Sarabun',sans-serif;background:var(--bg);color:var(--text);min
 .qc-tag{font-size:9px;padding:2px 7px;border-radius:8px;font-weight:600;white-space:nowrap;}
 .tag-on{background:rgba(134,239,172,.25);color:#86efac;}
 .tag-off{background:rgba(255,80,80,.35);color:#fca5a5;}
-.qc-body{padding:10px 12px;display:flex;flex-direction:row;align-items:center;gap:12px;}
+.qc-body{padding:12px 15px;display:flex;flex-direction:row;align-items:center;gap:12px;}
 .qc-qr{background:#fff;border-radius:6px;padding:4px;border:1px solid var(--gray-lt);flex-shrink:0;line-height:0;}
 .qc-qr canvas{display:block!important;width:120px !important;height:120px !important;}
-.qc-right{display:flex;flex-direction:column;gap:6px;flex:1;min-width:0;}
+.qc-right{display:flex;flex-direction:column;gap:12px;flex:1;min-width:0;}
 .qc-name{font-size:12px;font-weight:700;line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .qc-meta{font-size:10px;color:var(--text-soft);font-family:monospace;margin-top:2px;}
 .qc-dc{font-size:9px;font-weight:600;background:var(--red-pale);color:var(--red);padding:2px 7px;border-radius:6px;margin-top:3px;display:inline-block;}
@@ -370,12 +370,98 @@ tbody tr:hover td{background:var(--gray-pale);}
 .preview-dot{width:10px;height:10px;border-radius:50%;}
 .preview-url{flex:1;background:var(--white);border:1px solid var(--gray-lt);border-radius:5px;padding:4px 10px;font-size:11px;font-family:monospace;color:var(--text-soft);}
 .preview-frame{width:100%;border:none;display:block;}
+
+/* ══ HAMBURGER BUTTON (mobile only) ══ */
+.ham-btn{display:none;width:34px;height:34px;border-radius:8px;border:none;background:rgba(255,255,255,.12);color:#fff;font-size:18px;cursor:pointer;align-items:center;justify-content:center;flex-shrink:0;transition:background .15s;}
+.ham-btn:hover{background:rgba(255,255,255,.22);}
+
+/* SIDEBAR OVERLAY (mobile) */
+.sb-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:299;}
+.sb-overlay.show{display:block;}
+
+/* ══ RESPONSIVE — MOBILE ══ */
+@media(max-width:768px){
+  /* Topbar */
+  .topbar{padding:0 12px;height:48px;gap:8px;}
+  .tb-logo{font-size:12px;}
+  .tb-tag{display:none;}
+  .tb-pill{display:none;}
+  .tb-clock{font-size:10px;}
+  .ham-btn{display:flex;}
+
+  /* Layout: stack sidebar on top of content */
+  .layout{position:relative;overflow:hidden;}
+
+  /* Sidebar slides in from left */
+  .sidebar{
+    position:fixed;left:0;top:48px;bottom:0;
+    width:240px;
+    transform:translateX(-100%);
+    transition:transform .25s ease;
+    z-index:300;
+    box-shadow:4px 0 20px rgba(0,0,0,.15);
+    overflow-y:auto;
+  }
+  .sidebar.open{transform:translateX(0);}
+
+  /* Main takes full width */
+  .main{padding:12px 12px 80px;overflow:auto;width:100%;}
+
+  /* Stats grid: 2 cols on mobile */
+  .stats{grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:14px;}
+  .stat{padding:10px 12px;}
+  .stat-n{font-size:20px;}
+
+  /* QR grid: 1 col on mobile */
+  .qr-grid{grid-template-columns:1fr;}
+
+  /* Tables: horizontal scroll */
+  .tw{overflow-x:auto;-webkit-overflow-scrolling:touch;}
+  .sum-tbl{font-size:11px;}
+  .sum-tbl th,.sum-tbl td{padding:6px 8px;}
+
+  /* Toolbar wraps */
+  .toolbar{gap:6px;}
+  .search{width:100%!important;font-size:13px;}
+
+  /* page header stacks */
+  .ph{flex-direction:column;gap:8px;margin-bottom:12px;}
+  .ph-left h2{font-size:15px;}
+  .ph-acts{flex-wrap:wrap;}
+
+  /* DC summary bar stacks */
+  .dc-summary-bar{flex-wrap:wrap;gap:8px;}
+  .dc-sum-card{min-width:calc(50% - 4px);flex:1;}
+
+  /* Modals full-width on mobile */
+  .modal{width:calc(100vw - 24px)!important;max-width:none!important;padding:16px;}
+  .modal-info{width:auto!important;}
+  .info-grid{grid-template-columns:1fr!important;}
+
+  /* Menu cards in order editor */
+  .menus-grid{grid-template-columns:1fr!important;gap:12px!important;}
+  .menu-card{width:100%!important;}
+  .time-grid{grid-template-columns:1fr;}
+
+  /* Admin order summary table: make scrollable */
+  #ao-meal-sections .sum-tbl-wrap{overflow-x:auto;}
+
+  /* Buttons smaller on mobile */
+  .btn{font-size:11px;padding:6px 11px;}
+  .btn-sm{font-size:10px;padding:4px 8px;}
+}
+
+@media(max-width:400px){
+  .stats{grid-template-columns:repeat(2,1fr);}
+  .tb-clock{display:none;}
+}
 </style>
 </head>
 <body>
 
 <!-- TOP BAR -->
 <div class="topbar">
+  <button class="ham-btn" id="hamBtn" onclick="toggleSidebar()" aria-label="เมนู">☰</button>
   <div class="tb-logo">
     <span style="font-size:18px">🏥</span>ระบบสั่งอาหารผู้ป่วยประกันชีวิต
     <span class="tb-tag">IT Admin</span>
@@ -389,26 +475,28 @@ tbody tr:hover td{background:var(--gray-pale);}
     <span class="tb-clock" id="clock">--:--:--</span>
   </div>
 </div>
+<!-- SIDEBAR OVERLAY (mobile) -->
+<div class="sb-overlay" id="sbOverlay" onclick="closeSidebar()"></div>
 
 <div class="layout">
   <!-- SIDEBAR -->
-  <div class="sidebar">
+  <div class="sidebar" id="mainSidebar">
     <div class="sb-sec">
       <div class="sb-lbl">เมนูหลัก</div>
-      <button class="sb-item active" onclick="showPage('qr',this)">
+      <button class="sb-item active" onclick="showPage('qr',this);closeSidebar()">
         <span class="ic">📋</span>จัดการ QR Code<span class="sb-cnt" id="sc-qr">0</span>
       </button>
-      <button class="sb-item" onclick="showPage('orders',this)">
+      <button class="sb-item" onclick="showPage('orders',this);closeSidebar()">
         <span class="ic">🍱</span>รายการสั่งอาหาร<span class="sb-cnt" id="sc-ord">0</span>
       </button>
-      <button class="sb-item" onclick="showPage('discharge',this)">
+      <button class="sb-item" onclick="showPage('discharge',this);closeSidebar()">
         <span class="ic">🔔</span>แจ้งเตือน D/C
         <span class="sb-cnt" id="sc-dc" style="background:#fee2e2;color:#dc2626">0</span>
       </button>
-      <button class="sb-item order-menu-item" onclick="showPage('order-editor',this)">
+      <button class="sb-item order-menu-item" onclick="showPage('order-editor',this);closeSidebar()">
         <span class="ic">✏️</span>จัดการไฟล์ Order<span class="sb-cnt" id="sc-oe" style="background:var(--amber-pale);color:var(--amber)">order.html</span>
       </button>
-      <button class="sb-item admin-order-item" onclick="showPage('admin-order',this)">
+      <button class="sb-item admin-order-item" onclick="showPage('admin-order',this);closeSidebar()">
         <span class="ic">🛒</span>สั่งอาหาร<span class="sb-cnt" id="sc-ao" style="background:var(--purple-pale);color:var(--purple)">0</span>
       </button>
     </div>
@@ -460,6 +548,9 @@ tbody tr:hover td{background:var(--gray-pale);}
         <div class="ph-left"><h2>🍱 รายการสั่งอาหาร</h2><p>ออเดอร์ทั้งหมดในระบบ — ค้นหา กรอง Export ได้</p></div>
         <div class="ph-acts">
           <button class="btn btn-outline btn-sm" onclick="loadOrders()">🔄 รีเฟรช</button>
+          <button class="btn btn-sm" id="btnSelectMode" style="background:var(--blue-pale);color:var(--blue);border:1.5px solid var(--blue2);" onclick="toggleSelectMode()">☑️ เลือกรายการ</button>
+          <button class="btn btn-sm" id="btnDeleteSelected" style="display:none;background:var(--amber-pale);color:var(--amber);border:1.5px solid var(--amber);" onclick="deleteSelected()">🗑️ ลบที่เลือก (<span id="selCount">0</span>)</button>
+          <button class="btn btn-sm" style="background:var(--red-pale);color:var(--red);border:1.5px solid var(--red);" onclick="deleteAllOrders()">🗑️ ลบทั้งหมด</button>
           <button class="btn btn-sm" style="background:#06C755;color:#fff;" onclick="sendOrdersNotify()">📱 แจ้งเตือน LINE</button>
           <button class="btn btn-teal btn-sm" onclick="exportOrdersCSV()">⬇️ Export Excel</button>
         </div>
@@ -484,7 +575,8 @@ tbody tr:hover td{background:var(--gray-pale);}
         </div>
         <div class="tw">
           <table>
-            <thead><tr>
+            <thead><tr id="ordHeadRow">
+              <th id="th-chk" style="display:none;width:36px;text-align:center;padding:6px 4px;"><input type="checkbox" id="chkAll" onchange="toggleCheckAll(this)" style="cursor:pointer;width:15px;height:15px;accent-color:var(--blue);"></th>
               <th>#</th><th>สั่งเมื่อ</th><th>วันอาหาร</th><th>มื้อ</th>
               <th>ห้อง</th><th>ชื่อ-สกุล</th><th>HN</th><th>AN</th>
               <th>Ward</th><th>เตียง</th><th>Admit</th>
@@ -537,7 +629,7 @@ tbody tr:hover td{background:var(--gray-pale);}
               <col style="width:90px"><col style="width:170px"><col style="width:70px"><col style="width:80px">
               <col style="width:150px"><col style="width:100px"><col style="width:110px"><col style="width:110px"><col style="width:100px">
             </colgroup>
-            <thead><tr>
+            <thead><tr id="ordHeadRow">
               <th>ห้อง<span class="col-resizer"></span></th>
               <th>ชื่อ-สกุล<span class="col-resizer"></span></th>
               <th>HN<span class="col-resizer"></span></th>
@@ -868,11 +960,11 @@ tbody tr:hover td{background:var(--gray-pale);}
 <div class="toast" id="toast"></div>
 
 <script>
+
 // ════════════════════════════════════════
 //  CONFIG
-// ════════════════════════════════════════
-const API       = 'http://localhost:4000';
-let   ORDER_URL = 'http://localhost/order.html';
+const API       = 'http://172.31.9.22:4000';
+let   ORDER_URL = 'http://172.31.9.22/order.html';
 
 let cfg = {
   hospname:  'โรงพยาบาลกาญจนดิษฐ์',
@@ -1134,8 +1226,7 @@ function renderQR() {
         </span>
       </div>
       <div class="qc-body">
-        <div class="qc-qr" id="qr-${r.id}"></div>
-        <div class="qc-right">
+        <div class="qc-right" style="width:100%;">
           <div>
             <div class="qc-name">${r.pt || '<span style="color:var(--text-soft);font-weight:400;font-style:italic">ห้องว่าง</span>'}</div>
             ${r.hn ? `<div class="qc-meta">HN:${r.hn} · AN:${r.an}</div>` : ''}
@@ -1144,24 +1235,12 @@ function renderQR() {
           </div>
           <div class="qc-acts">
             ${r.pt ? `<button class="qa qa-i" onclick="openPatientInfo('${r.id}')">👤 ข้อมูล</button>` : ''}
-            <button class="qa qa-p" onclick="openPrint('${r.id}')">🖨️ พิมพ์</button>
+            <button class="qa qa-p" onclick="openPrint('${r.id}')">🖨️ พิมพ์ QR</button>
             <button class="qa qa-c" onclick="copyUrl('${url}')">📋 URL</button>
           </div>
         </div>
       </div>`;
     grid.appendChild(card);
-    // สร้าง QR เพียง 1 ภาพต่อห้อง (clear ก่อนเสมอ + ลบ img ที่ QRCode สร้างซ้ำ)
-    setTimeout(() => {
-      const el = document.getElementById('qr-' + r.id);
-      if(!el) return;
-      el.innerHTML = '';
-      el.dataset.qrDone = '';
-      new QRCode(el, { text: url, width: 90, height: 90, colorDark: '#0d2444', colorLight: '#fff', correctLevel: QRCode.CorrectLevel.H });
-      // QRCode.js สร้างทั้ง canvas + img — ซ่อน img เก็บแค่ canvas
-      setTimeout(() => {
-        el.querySelectorAll('img').forEach(img => img.style.display = 'none');
-      }, 50);
-    }, 30);
   });
 }
 
@@ -1257,21 +1336,29 @@ function filterOrders() {
   renderOrders(ordFiltered);
 }
 
+let selectMode = false;
+
 function renderOrders(list) {
   const body = document.getElementById('ordBody');
+  const colspan = selectMode ? 16 : 15;
   if(!list.length) {
-    body.innerHTML = `<tr class="empty-row"><td colspan="15">ไม่มีข้อมูล</td></tr>`;
+    body.innerHTML = `<tr class="empty-row"><td colspan="${colspan}">ไม่มีข้อมูล</td></tr>`;
     return;
   }
   const sorted = [...list].sort((a,b) => new Date(b.orderedAt) - new Date(a.orderedAt));
   body.innerHTML = sorted.map((o, i) => {
-    const st   = o.status || 'active';
+    const st      = o.status || 'active';
+    const realIdx = orders.indexOf(o);
     const stel = st === 'active'
       ? `<span class="status-badge sb-active">✅ ปกติ</span>`
       : st === 'edited'
         ? `<span class="status-badge sb-edited">✏️ แก้ไข</span>`
         : `<span class="status-badge sb-cancelled">❌ ยกเลิก</span>`;
+    const chkCell = selectMode
+      ? `<td style="text-align:center;padding:6px 4px;"><input type="checkbox" class="row-chk" data-idx="${realIdx}" onchange="updateSelCount()" style="cursor:pointer;width:15px;height:15px;accent-color:var(--blue);"></td>`
+      : '';
     return `<tr style="${st==='cancelled'?'opacity:.5':''}">
+      ${chkCell}
       <td style="color:var(--text-soft)">${i+1}</td>
       <td style="font-size:11px;color:var(--text-soft);white-space:nowrap">${dtToThai(o.orderedAt)}</td>
       <td style="font-size:11px">${isoToThai(o.mealDate)}</td>
@@ -1289,13 +1376,84 @@ function renderOrders(list) {
       <td>
         <div style="display:flex;gap:4px;">
           ${st!=='cancelled'
-            ? `<button class="icon-btn ib-edit" onclick="cancelOrder(${orders.indexOf(o)})">❌</button>`
-            : `<button class="icon-btn" style="background:var(--gray-pale);color:var(--text-soft);" onclick="restoreOrder(${orders.indexOf(o)})">↩️</button>`}
-          <button class="icon-btn ib-del" onclick="deleteOrder(${orders.indexOf(o)})">🗑️</button>
+            ? `<button class="icon-btn ib-edit" onclick="cancelOrder(${realIdx})">❌</button>`
+            : `<button class="icon-btn" style="background:var(--gray-pale);color:var(--text-soft);" onclick="restoreOrder(${realIdx})">↩️</button>`}
+          <button class="icon-btn ib-del" onclick="deleteOrder(${realIdx})">🗑️</button>
         </div>
       </td>
     </tr>`;
   }).join('');
+}
+
+function toggleSelectMode() {
+  selectMode = !selectMode;
+  const btn    = document.getElementById('btnSelectMode');
+  const btnDel = document.getElementById('btnDeleteSelected');
+  const thChk  = document.getElementById('th-chk');
+  if (selectMode) {
+    btn.style.cssText = 'background:var(--blue);color:#fff;border:1.5px solid var(--blue);';
+    btn.textContent = '✕ ยกเลิกการเลือก';
+    if (btnDel) btnDel.style.display = 'inline-flex';
+    if (thChk)  thChk.style.display  = 'table-cell';
+  } else {
+    btn.style.cssText = 'background:var(--blue-pale);color:var(--blue);border:1.5px solid var(--blue2);';
+    btn.textContent = '☑️ เลือกรายการ';
+    if (btnDel) btnDel.style.display = 'none';
+    if (thChk)  thChk.style.display  = 'none';
+    const selCnt = document.getElementById('selCount');
+    if (selCnt) selCnt.textContent = '0';
+  }
+  const chkAll = document.getElementById('chkAll');
+  if (chkAll) chkAll.checked = false;
+  filterOrders();
+}
+
+function toggleCheckAll(master) {
+  document.querySelectorAll('.row-chk').forEach(c => c.checked = master.checked);
+  updateSelCount();
+}
+
+function updateSelCount() {
+  const cnt    = document.querySelectorAll('.row-chk:checked').length;
+  const el     = document.getElementById('selCount');
+  if (el) el.textContent = cnt;
+  const chkAll = document.getElementById('chkAll');
+  const all    = document.querySelectorAll('.row-chk');
+  if (chkAll && all.length) chkAll.indeterminate = cnt > 0 && cnt < all.length;
+  if (chkAll && all.length) chkAll.checked = cnt === all.length && all.length > 0;
+}
+
+function deleteSelected() {
+  const checked = [...document.querySelectorAll('.row-chk:checked')];
+  if (!checked.length) { toast('⚠️ ยังไม่ได้เลือกรายการ'); return; }
+  const idxs = checked.map(c => parseInt(c.dataset.idx)).sort((a,b) => b - a);
+  document.getElementById('cf-title').textContent = '🗑️ ลบที่เลือก';
+  document.getElementById('cf-sub').innerHTML =
+    `ลบ <strong>${idxs.length} รายการ</strong> ที่เลือกไว้<br><span style="color:var(--red);font-size:12px;">⚠️ ลบถาวร ไม่สามารถกู้คืนได้</span>`;
+  document.getElementById('cf-btn').textContent = `🗑️ ยืนยันลบ ${idxs.length} รายการ`;
+  document.getElementById('cf-btn').style.background = 'var(--red)';
+  confirmCb = () => {
+    idxs.forEach(i => orders.splice(i, 1));
+    saveOrders(); closeOv('ov-confirm'); loadOrders();
+    toast(`🗑️ ลบ ${idxs.length} รายการแล้ว`);
+    selectMode = true; toggleSelectMode();
+  };
+  document.getElementById('ov-confirm').classList.add('show');
+}
+
+function deleteAllOrders() {
+  if (!orders.length) { toast('ไม่มีข้อมูลให้ลบ'); return; }
+  document.getElementById('cf-title').textContent = '🗑️ ลบทั้งหมด';
+  document.getElementById('cf-sub').innerHTML =
+    `ลบออเดอร์ทั้งหมด <strong>${orders.length} รายการ</strong><br><span style="color:var(--red);font-size:12px;">⚠️ ลบถาวร ไม่สามารถกู้คืนได้</span>`;
+  document.getElementById('cf-btn').textContent = `🗑️ ยืนยันลบทั้งหมด (${orders.length})`;
+  document.getElementById('cf-btn').style.background = 'var(--red)';
+  confirmCb = () => {
+    orders.length = 0;
+    saveOrders(); closeOv('ov-confirm'); loadOrders();
+    toast('🗑️ ลบออเดอร์ทั้งหมดแล้ว');
+  };
+  document.getElementById('ov-confirm').classList.add('show');
 }
 
 function mealCls(key) {
@@ -1568,7 +1726,7 @@ async function autoRefresh() {
 // ════════════════════════════════════════
 //  MEAL CONSTANTS
 // ════════════════════════════════════════
-const MEAL_NAMES = { morning:'มื้อเช้า', morning_snack:'ว่างเช้า', noon:'มื้อกลางวัน', noon_snack:'ว่างบ่าย', evening:'มื้อเย็น' };
+const MEAL_NAMES = { morning:'มื้อเช้า', morning_snack:'มื้อว่างเช้า', noon:'มื้อเที่ยง', noon_snack:'มื้อว่างเที่ยง', evening:'มื้อเย็น' };
 const MEAL_EM    = { morning:'🌅', morning_snack:'☕', noon:'☀️', noon_snack:'🍵', evening:'🌙' };
 const CHIP_CLS   = { morning:'chip-morning', morning_snack:'chip-morning_snack', noon:'chip-noon', noon_snack:'chip-noon_snack', evening:'chip-evening' };
 
@@ -2101,7 +2259,7 @@ function renderAoSummary() {
       <div id="${blockId}" style="overflow:hidden;">
         <table class="sum-tbl">
           <colgroup><col class="col-date"><col class="col-room"><col class="col-pt"><col class="col-menu"><col class="col-note"><col class="col-time"><col class="col-by"></colgroup>
-          <thead><tr><th>วันที่อาหาร</th><th>ห้อง</th><th>ผู้ป่วย</th><th>เมนู</th><th>หมายเหตุ</th><th>🕐 เวลาสั่ง</th><th>โดย</th></tr></thead>
+          <thead><tr id="ordHeadRow"><th>วันที่อาหาร</th><th>ห้อง</th><th>ผู้ป่วย</th><th>เมนู</th><th>หมายเหตุ</th><th>🕐 เวลาสั่ง</th><th>โดย</th></tr></thead>
           <tbody>${rows}</tbody>
         </table>
       </div>
@@ -2139,6 +2297,30 @@ function updateAoStats() {
 }
 
 // ════════════════════════════════════════
+//  MOBILE SIDEBAR TOGGLE
+// ════════════════════════════════════════
+function toggleSidebar(){
+  const sb = document.getElementById('mainSidebar');
+  const ov = document.getElementById('sbOverlay');
+  const isOpen = sb.classList.contains('open');
+  if(isOpen){ closeSidebar(); } else {
+    sb.classList.add('open');
+    ov.classList.add('show');
+    document.getElementById('hamBtn').textContent = '✕';
+  }
+}
+function closeSidebar(){
+  const sb = document.getElementById('mainSidebar');
+  const ov = document.getElementById('sbOverlay');
+  sb.classList.remove('open');
+  ov.classList.remove('show');
+  const btn = document.getElementById('hamBtn');
+  if(btn) btn.textContent = '☰';
+}
+// Close sidebar on resize to desktop
+window.addEventListener('resize',()=>{ if(window.innerWidth>768) closeSidebar(); });
+
+// ════════════════════════════════════════
 //  EXTEND showPage for new pages
 // ════════════════════════════════════════
 const _origShowPage = showPage;
@@ -2170,11 +2352,12 @@ showPage = function(name, el) {
           const newOrders  = JSON.parse(e.newValue||'[]');
           const prevOrders = JSON.parse(e.oldValue||'[]');
           const prevKeys   = new Set(prevOrders.map(o=>o.room+'|'+o.orderedAt+'|'+o.mealKey));
-          const added      = newOrders.filter(o=>o.orderedAt&&!prevKeys.has(o.room+'|'+o.orderedAt+'|'+o.mealKey)&&o.orderedBy!=='admin');
+          const added      = newOrders.filter(o=>o.orderedAt&&!prevKeys.has(o.room+'|'+o.orderedAt+'|'+o.mealKey)&&o.orderedBy==='patient');
           if(added.length) {
             const o=added[0];
             const sep='─'.repeat(18);
-            const msg=`🍱 ผู้ป่วยสั่งอาหาร\n${sep}\n👤 ${o.patientName||'-'}\n📍 ห้อง ${o.roomName||o.room} | ${o.wardName||'-'}\nHN:${o.hn||'-'} | AN:${o.an||'-'}\n${MEAL_EM[o.mealKey]||'🍽️'} ${o.mealName}: ${o.menuName}${o.note?'\n📝 '+o.note:''}\n${sep}`;
+            const mealLines=added.map(a=>`${MEAL_EM[a.mealKey]||'🍽️'} ${a.mealName}: ${a.menuName}${a.note?'\n📝 '+a.note:''}`).join('\n');
+            const msg=`🍱 ผู้ป่วยสั่งอาหาร\n${sep}\n👤 ${o.patientName||'-'}\n📍 ห้อง ${o.roomName||o.room} | ${o.wardName||'-'}\nHN:${o.hn||'-'} | AN:${o.an||'-'}\n${sep}\n${mealLines}\n${sep}`;
             sendLineMsg(msg);
           }
         } catch(e2) {}

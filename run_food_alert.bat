@@ -5,7 +5,7 @@ echo ==========================
 echo  _alert SYSTEM
 echo ==========================
 
-cd /d D:\food
+cd /d D:\hospital-foodss\public
 
 echo Running Python Script...
 python food_alert.py
