@@ -601,8 +601,8 @@ tbody tr:hover td{background:var(--gray-pale);}
       <!-- Toolbar: ค้นหา + กรองวันที่ -->
       <div class="toolbar" style="margin-bottom:10px;">
         <input class="search" id="dcSearch" placeholder="🔍 ค้นหาชื่อ / ห้อง / HN..." oninput="filterDC()" style="width:400px">
-        <input class="search" id="dcDate" type="date" onchange="filterDC()" style="width:150px" title="กรองตามวัน D/C (yyyy-mm-dd)">
-        <button class="fbtn" onclick="document.getElementById('dcDate').value='';filterDC()">ล้างวันที่</button>
+         <!--<input class="search" id="dcDate" type="date" onchange="filterDC()" style="width:150px" title="กรองตามวัน D/C (yyyy-mm-dd)">
+        <button class="fbtn" onclick="document.getElementById('dcDate').value='';filterDC()">ล้างวันที่</button>-->
         <span style="margin-left:auto;font-size:11px;color:var(--text-soft)" id="dcCount"></span>
       </div>
       <div id="dcLoading" style="display:none;" class="loading-overlay">
@@ -668,7 +668,7 @@ tbody tr:hover td{background:var(--gray-pale);}
         <button class="etab active" onclick="showETab('menus',this)">🍽️ จัดการเมนูอาหาร</button>
         <button class="etab" onclick="showETab('times',this)">⏰ เวลารับออเดอร์</button>
         <button class="etab" onclick="showETab('settings',this)">⚙️ การตั้งค่า</button>
-        <button class="etab" onclick="showETab('preview',this)">👁 ตัวอย่าง order.html</button>
+        <!--<button class="etab" onclick="showETab('preview',this)">👁 ตัวอย่าง order.html</button>-->
       </div>
 
       <!-- TAB: MENUS -->
@@ -741,7 +741,7 @@ tbody tr:hover td{background:var(--gray-pale);}
           <div style="margin-top:12px;">
             <div class="f-row"><label class="f-lbl">ชื่อโรงพยาบาล</label><input class="f-ctrl" id="cfg-hospname" placeholder="ชื่อโรงพยาบาล"></div>
             <div class="f-row"><label class="f-lbl">URL หน้า order.html</label><input class="f-ctrl" id="cfg-orderurl" placeholder="http://..."></div>
-            <div class="f-row"><label class="f-lbl">Backend API URL</label><input class="f-ctrl" id="cfg-apiurl" placeholder="http://localhost:4000"></div>
+            <div class="f-row"><label class="f-lbl">Backend API URL</label><input class="f-ctrl" id="cfg-apiurl" placeholder="http://172.31.9.22:4000"></div>
             <div class="f-row"><label class="f-lbl">LINE client-key</label><input class="f-ctrl" id="cfg-linetoken2" type="password" placeholder="client-key" oninput="document.getElementById('cfg-linetoken').value=this.value"></div>
             <div class="f-row"><label class="f-lbl">LINE secret-key</label><input class="f-ctrl" id="cfg-linesecret2" type="password" placeholder="secret-key" oninput="document.getElementById('cfg-linesecret').value=this.value"></div>
           </div>
@@ -963,8 +963,11 @@ tbody tr:hover td{background:var(--gray-pale);}
 
 // ════════════════════════════════════════
 //  CONFIG
-const API       = 'http://172.31.9.22:4000';
-let   ORDER_URL = 'http://172.31.9.22/order.html';
+//const API       = 'http://172.31.9.22:4000';
+//let   ORDER_URL = 'http://172.31.9.22/order.html';
+
+const API = 'https://brilliant-deleted-must-approval.trycloudflare.com';
+let   ORDER_URL = 'https://hospital-foods.web.app/order.html';
 
 let cfg = {
   hospname:  'โรงพยาบาลกาญจนดิษฐ์',

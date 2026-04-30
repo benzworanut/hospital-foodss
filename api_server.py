@@ -177,6 +177,10 @@ WHERE w.ward_active = 'Y'
 
 # ════════════════ ENDPOINTS ════════════════
 
+@app.get("/")
+def home():
+    return {"status": "ok"}
+
 @app.get("/api/hosxp/ping")
 def ping():
     try:
