@@ -87,13 +87,13 @@ LEFT JOIN ward      w ON w.ward      = i.ward
 LEFT JOIN roomno    r ON r.roomno    = ip.roomno
 LEFT JOIN religion re ON re.religion = p.religion
 LEFT JOIN pttype pt ON pt.pttype     = i.pttype 
-WHERE w.ward_active = 'Y'  AND i.pttype = 'J6' 
+WHERE w.ward_active = 'Y'  AND i.pttype = 'J6' AND i.an = '690004317'
    AND (r.name LIKE 'ห้องพิเศษ%' OR r.name LIKE '%พิเศษ%' )
-   AND i.dchdate IS NULL
+   
 ORDER BY i.regdate DESC
 LIMIT 200
 """
-# ── AND i.pttype = 'J6'  AND i.an = '690004317  ──
+# ── AND i.pttype = 'J6'  AND i.dchdate IS NULL  ──
 
 # ── SQL: Discharge วันนี้ ──
 SQL_DISCHARGE = """

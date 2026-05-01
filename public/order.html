@@ -596,17 +596,17 @@ body{display:flex;flex-direction:column;padding-top:var(--sat);}
 
 <script>
 
-    const API = 'https://gbp-highest-paperbacks-subtle.trycloudflare.com';
+    const API = 'https://vampire-surrounded-surname-turbo.trycloudflare.com';
 
-      window.onload = () => {
-        fetch(`${API}/orders`)
-          .then(res => res.json())
-          .then(json => {
-            console.log(json);
-            renderOrders(json.data || []); 
-          })
-          .catch(err => console.error(err));
-      };
+    window.onload = () => {
+      fetch(`${API}/orders`)
+        .then(res => res.json())
+        .then(data => {
+          console.log(data);
+          renderOrders(data);
+        })
+        .catch(err => console.error(err));
+    };
 
     function renderOrders(data) {
       const el = document.getElementById('order-list');
@@ -842,7 +842,6 @@ function imgTag(imageUrl, em, wrapCls, imgCls, phCls){
 let cfg = getCfg();
 let _patients = [];   // ผู้ป่วย admit ปัจจุบัน จาก API (ยังไม่ D/S)
 let _dcList   = [];   // discharge วันนี้ จาก API
-const _notifiedBatch = new Set(); // ป้องกัน LINE notify ซ้ำ
 let curPage = 'rooms';
 let wardFil = 'ALL';
 let histFil = 'ALL';
@@ -861,7 +860,7 @@ let m7Day = today();
    Logic เหมือน admin (dedup ด้วย AN)
 ════════════════════════════════════ */
 async function fetchPatients() {
-  const apiUrl = cfg.apiurl || getCfg().apiurl || '';
+  const apiUrl = 'https://vampire-surrounded-surname-turbo.trycloudflare.com';
   const bar   = document.getElementById('apiBar');
   const badge = document.getElementById('apiBadge');
   if(bar)   bar.classList.add('show');
@@ -912,7 +911,7 @@ async function fetchPatients() {
    ดึง D/C วันนี้จาก /api/hosxp/discharge-today
 ════════════════════════════════════ */
 async function fetchDischarge() {
-  const apiUrl = cfg.apiurl || getCfg().apiurl || '';
+  const apiUrl = 'https://vampire-surrounded-surname-turbo.trycloudflare.com';
   const out    = document.getElementById('dcOut');
   if(out) out.innerHTML = `<div class="empty"><div class="empty-ic">⏳</div><div class="empty-t">กำลังโหลด...</div></div>`;
   try {
@@ -943,36 +942,29 @@ async function fetchDischarge() {
 }
 
 /* ════════════════════════════════════
-   LINE NOTIFY — ส่งผ่าน Backend API
-   POST /api/moph/notify  (key อยู่ใน config.ini ฝั่ง server)
-   ไม่ต้องเก็บ client-key / secret-key ใน browser เลย
+   LINE NOTIFY (ผ่าน MOPH API)
 ════════════════════════════════════ */
 async function sendLineMsg(msg) {
-  const apiUrl = (cfg.apiurl || getCfg().apiurl || '').replace(/\/$/, '');
-  if(!apiUrl) return { ok:false, reason:'ยังไม่ได้ตั้ง API URL ในระบบ Admin → ตั้งค่า' };
+  const ck = cfg.linetoken  || '';
+  const sk = cfg.linesecret || '';
+  if(!ck || !sk) return { ok:false, reason:'ยังไม่ได้ตั้ง client-key / secret-key' };
   try {
-    const res = await fetch(`${apiUrl}/api/moph/notify`, {
+    const res = await fetch('https://morpromt2f.moph.go.th/api/notify/send', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ message: String(msg) }),
-      signal: AbortSignal.timeout(10000),
+      headers: { 'Content-Type':'application/json', 'client-key':ck, 'secret-key':sk },
+      body: JSON.stringify({ messages:[{ type:'text', text: String(msg) }] }),
     });
     const d = await res.json().catch(() => ({}));
-    return res.ok && d.ok ? { ok:true } : { ok:false, reason: d.detail || d.reason || 'HTTP '+res.status };
+    return res.ok ? { ok:true } : { ok:false, reason: d.message||'HTTP '+res.status };
   } catch(e) {
     return { ok:false, reason: e.message };
   }
 }
 
-/* ── ตรวจว่า API พร้อมรับ notify ─ */
-function canNotify() {
-  return !!(cfg.apiurl || getCfg().apiurl);
-}
-
 /* ส่งแจ้งเตือน D/C รายบุคคล */
 async function sendDCNotifySingle(r) {
-  if(!canNotify()) { toast('⚠️ ยังไม่ได้ตั้ง API URL'); return; }
-  const sep = '──────────────────';
+  if(!cfg.linetoken || !cfg.linesecret) { toast('⚠️ ยังไม่ได้ตั้ง LINE Notify'); return; }
+  const sep = '─'.repeat(22);
   const msg = `🔔 Discharge\n${sep}\n👤 ${r.name||'-'}\n📍 ห้อง ${r.room} | ${r.ward||'-'}\n🪪 HN: ${r.hn||'-'} | AN: ${r.an||'-'}\n📅 Admit: ${r.admit||'-'}\n🔴 D/C: ${r.dc||'-'}\n${sep}`;
   const res = await sendLineMsg(msg);
   toast(res.ok ? `📱 ส่งแจ้งเตือน ${r.name} แล้ว` : `❌ ส่งล้มเหลว: ${res.reason}`);
@@ -980,11 +972,11 @@ async function sendDCNotifySingle(r) {
 
 /* ส่งแจ้งเตือน D/C ทั้งหมด */
 async function sendDCNotifyAll() {
-  if(!canNotify()) { toast('⚠️ ยังไม่ได้ตั้ง API URL'); return; }
+  if(!cfg.linetoken || !cfg.linesecret) { toast('⚠️ ยังไม่ได้ตั้ง LINE Notify'); return; }
   if(!_dcList.length) { toast('✅ ไม่มีผู้ป่วย Discharge วันนี้'); return; }
-  const sep = '──────────────────';
-  const todayStr = new Date().toLocaleDateString('th-TH', { dateStyle:'long' });
-  let msg = `🔔 แจ้งเตือน Discharge ${todayStr}\n(ห้องพิเศษ) ${_dcList.length} ราย\n${sep}\n`;
+  const sep = '─'.repeat(22);
+  const today = new Date().toLocaleDateString('th-TH', { dateStyle:'long' });
+  let msg = `🔔 แจ้งเตือน Discharge ${today}\n(ห้องพิเศษ) ${_dcList.length} ราย\n${sep}\n`;
   _dcList.forEach((r, i) => {
     msg += `${i+1}. ${r.room} | ${r.name||'-'}\n   HN:${r.hn||'-'} AN:${r.an||'-'}\n   Admit: ${r.admit||'-'} | D/C: ${r.dc||'-'}\n${sep}\n`;
   });
@@ -1001,13 +993,8 @@ try{
 }catch(e){}
 
 window.addEventListener('storage', e => {
-  // ไม่รวม hosp_orders เพราะ notify ส่งแล้วใน confirmOrder()
-  if(['hosp_rooms','hosp_cfg','hosp_menusByDay','hosp_mealTimes'].includes(e.key)){
+  if(['hosp_rooms','hosp_cfg','hosp_menusByDay','hosp_mealTimes','hosp_orders'].includes(e.key)){
     cfg = getCfg();
-    onDataChange();
-  }
-  // อัป UI เมื่อ orders เปลี่ยน (จาก admin tab) แต่ไม่ส่ง notify ซ้ำ
-  if(e.key === 'hosp_orders'){
     onDataChange();
   }
 });
@@ -1530,19 +1517,16 @@ function confirmOrder(){
   updateBadges();
   toast(`✅ สั่งอาหาร ${added} มื้อเรียบร้อย`, 'ok');
 
-  // แจ้งเตือน LINE — ป้องกันส่งซ้ำด้วย _notifiedBatch
+  // แจ้งเตือน LINE ถ้าตั้งค่าไว้
   cfg = getCfg();
-  if(canNotify() && !_notifiedBatch.has(batchAt)) {
-    _notifiedBatch.add(batchAt);
+  if(cfg.linetoken && cfg.linesecret) {
     const sep = '──────────────────';
     const newOrds = orders.filter(o => o.orderedAt === batchAt);
-    const mealLines = newOrds.map(o =>
-      `${MEAL_EM[o.mealKey]||'🍽️'} ${MEAL_NAMES[o.mealKey]||o.mealKey}: ${o.menuName}${o.note?'\n📝 '+o.note:''}`
-    ).join('\n');
-    // 📍 ห้อง 206 | Ward (ไม่ซ้ำ ward)
-    const roomDisplay = room.roomName || activeRoomId;
+    const mealLines = newOrds.map(o => `${MEAL_EM[o.mealKey]||'🍽️'} ${MEAL_NAMES[o.mealKey]||o.mealKey}: ${o.menuName}${o.note?'\n📝 '+o.note:''}`).join('\n');
+    // รูปแบบห้อง: "ห้อง 206 พิเศษตึกศัลกรรม | IPD4"
+    const roomDisplay = room.roomName ? `ห้อง ${room.roomName}${room.ward?' '+room.ward:''}` : `ห้อง ${activeRoomId}`;
     const wardDisplay = room.ward || '-';
-    const msg = `🍱 ผู้ป่วยสั่งอาหาร\n${sep}\n👤 ${room.pt||'-'}\n📍 ห้อง ${roomDisplay} | ${wardDisplay}\nHN:${room.hn||'-'} | AN:${room.an||'-'}\n${sep}\n${mealLines}\n${sep}`;
+    const msg = `🍱 ผู้ป่วยสั่งอาหาร\n${sep}\n👤 ${room.pt||'-'}\n📍 ${roomDisplay} | ${wardDisplay}\nHN:${room.hn||'-'} | AN:${room.an||'-'}\n${sep}\n${mealLines}\n${sep}`;
     sendLineMsg(msg).then(res => { if(res.ok) toast('📱 แจ้ง LINE แล้ว'); });
   }
 }
@@ -1629,14 +1613,14 @@ function renderMenu7(){
 function renderDCFromAPI(){
   const out = document.getElementById('dcOut');
   if(!_dcList.length){
-    out.innerHTML=`<div class="empty"><div class="empty-ic">✅</div><div class="empty-t">ไม่มีข้อมูล Discharge วันนี้</div><div class="empty-s">ข้อมูลดึงจาก HOSxP โดยตรง</div></div>`;
+    out.innerHTML=`<div class="empty"><div class="empty-ic">✅</div><div class="empty-t">ไม่มีข้อมูล Discharge วันนี้</div></div>`;
     return;
   }
   // ปุ่มแจ้งเตือนทั้งหมด (แสดงเฉพาะถ้ามี LINE key)
-  const hasLine = canNotify();
+  const hasLine = !!(cfg.linetoken && cfg.linesecret);
   const notifyAllBtn = hasLine
     ? `<button onclick="sendDCNotifyAll()" style="width:100%;padding:10px;border-radius:var(--rs);border:none;background:linear-gradient(135deg,#0e7a5f,#10b981);color:#fff;font-size:13px;font-weight:700;font-family:'Sarabun',sans-serif;cursor:pointer;margin-bottom:10px;">📱 แจ้งเตือน D/C ทั้งหมด (${_dcList.length} ราย)</button>`
-    : `<div style="font-size:11px;color:var(--text-soft);text-align:center;padding:6px;margin-bottom:8px;">⚠️ ยังไม่ได้ตั้ง API URL ในระบบ Admin → ตั้งค่า</div>`;
+    : `<div style="font-size:11px;color:var(--text-soft);text-align:center;padding:6px;margin-bottom:8px;">⚠️ ยังไม่ได้ตั้งค่า LINE Notify ในระบบ Admin</div>`;
 
   out.innerHTML = notifyAllBtn + _dcList.map(r => {
     const notifyBtn = hasLine
