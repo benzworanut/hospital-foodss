@@ -1,36 +1,47 @@
 """
-api_server.py — FastAPI Backend v2.1
+api_server.py — FastAPI Backend v2.2
 รัน: uvicorn api_server:app --host 0.0.0.0 --port 4000 --reload
 """
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import Optional
-import psycopg2, psycopg2.extras, configparser, requests, logging
+import psycopg2, psycopg2.extras, requests, logging
 from datetime import datetime, date as date_type
 import os
-import configparser
-config = configparser.ConfigParser()
+from dotenv import load_dotenv
+
+# ── โหลด .env ──
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-CONFIG_PATH = os.path.join(BASE_DIR, "config.ini")
-loaded = config.read(CONFIG_PATH, encoding="utf-8")
-print("CONFIG FILE LOADED:", loaded)
-print("SECTIONS FOUND:", config.sections())
-if "database" not in config:
-    raise Exception(f"Missing [database] in config.ini. Found: {config.sections()}")
-if "moph" not in config:
-    raise Exception(f"Missing [moph] in config.ini. Found: {config.sections()}")
-DB = config["database"]
-MOPH = config["moph"]
+load_dotenv(os.path.join(BASE_DIR, ".env"))
+
+def _require(key: str) -> str:
+    val = os.getenv(key)
+    if not val:
+        raise Exception(f"Missing required env var: {key}  (กรุณาตั้งค่าใน .env)")
+    return val
+
+DB_HOST     = _require("DB_HOST")
+DB_PORT     = _require("DB_PORT")
+DB_NAME     = _require("DB_NAME")
+DB_USER     = _require("DB_USER")
+DB_PASSWORD = _require("DB_PASSWORD")
+
+MOPH_CLIENT_KEY = _require("MOPH_CLIENT_KEY")
+MOPH_SECRET_KEY = _require("MOPH_SECRET_KEY")
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
-app = FastAPI(title="Hospital Food Order API", version="2.1.0")
-app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
+app = FastAPI(title="Hospital Food Order API", version="2.2.0")
+app.add_middleware(CORSMiddleware, 
+allow_origins=[
+    "https://hospital-foods.web.app",
+    "http://localhost:5500",], 
+allow_methods=["*"], allow_headers=["*"])
 
 def get_conn():
     return psycopg2.connect(
-        host=DB["host"], port=DB["port"], database=DB["dbname"],
-        user=DB["user"], password=DB["password"], connect_timeout=10,
+        host=DB_HOST, port=DB_PORT, database=DB_NAME,
+        user=DB_USER, password=DB_PASSWORD, connect_timeout=10,
     )
 
 def query(sql, params=None):
@@ -87,13 +98,13 @@ LEFT JOIN ward      w ON w.ward      = i.ward
 LEFT JOIN roomno    r ON r.roomno    = ip.roomno
 LEFT JOIN religion re ON re.religion = p.religion
 LEFT JOIN pttype pt ON pt.pttype     = i.pttype 
-WHERE w.ward_active = 'Y'  AND i.pttype = 'J6' AND i.an = '690004317'
-   AND (r.name LIKE 'ห้องพิเศษ%' OR r.name LIKE '%พิเศษ%' )
-   
+WHERE w.ward_active = 'Y'  AND i.pttype = 'J6'  AND i.an = '690004317'
+   AND (r.name LIKE 'ห้องพิเศษ%' OR r.name LIKE '%พิเศษ%') 
+
 ORDER BY i.regdate DESC
 LIMIT 200
 """
-# ── AND i.pttype = 'J6'  AND i.dchdate IS NULL  ──
+# ── AND i.pttype = 'J6'  AND i.dchdate IS NULL AND i.an = '690004317' ──
 
 # ── SQL: Discharge วันนี้ ──
 SQL_DISCHARGE = """
@@ -181,9 +192,17 @@ WHERE w.ward_active = 'Y'
 def home():
     return {"status": "ok"}
 
-@app.get("/orders")
-def orders():
+@app.get("/orders") 
+def orders(): 
     return {"message": "test orders ok"}
+
+@app.get("/health")
+def health():
+    return {
+        "ok": True,
+        "service": "hospital-food-api",
+        "time": datetime.now().isoformat()
+    }
 
 @app.get("/api/hosxp/ping")
 def ping():
@@ -297,8 +316,8 @@ def moph_notify(body: NotifyBody):
             "https://morpromt2f.moph.go.th/api/notify/send",
             json={"messages": [{"type":"text","text":body.message}]},
             headers={"Content-Type":"application/json",
-                     "client-key": MOPH["client_key"],
-                     "secret-key": MOPH["secret_key"]},
+                     "client-key": MOPH_CLIENT_KEY,
+                     "secret-key": MOPH_SECRET_KEY},
             timeout=10,
         )
         return {"ok": r.ok, "status": r.status_code}

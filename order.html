@@ -2,7 +2,11 @@
 <html lang="th">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#0d2444">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>ระบบสั่งอาหารผู้ป่วยใน</title>
 <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&family=Noto+Serif+Thai:wght@600;700&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -94,7 +98,7 @@ body{display:flex;flex-direction:column;padding-top:var(--sat);}
    PAGE 1: ROOMS
 ══════════════════════ */
 .p1-bar{display:flex;gap:7px;margin-bottom:9px;align-items:center;}
-.srch{flex:1;padding:8px 13px;border:1.5px solid var(--gray-lt);border-radius:24px;font-size:13px;font-family:'Sarabun',sans-serif;outline:none;background:var(--white);}
+.srch{flex:1;padding:8px 13px;border:1.5px solid var(--gray-lt);border-radius:24px;font-size:16px;font-family:'Sarabun',sans-serif;outline:none;background:var(--white);}
 .srch:focus{border-color:var(--blue2);}
 .ward-row{display:flex;gap:5px;overflow-x:auto;padding-bottom:3px;margin-bottom:10px;scrollbar-width:none;}
 .ward-row::-webkit-scrollbar{display:none;}
@@ -203,7 +207,7 @@ body{display:flex;flex-direction:column;padding-top:var(--sat);}
 .ob-chg{margin-left:auto;padding:4px 9px;border-radius:7px;border:1px solid var(--teal2);background:var(--white);font-size:10px;font-weight:600;color:var(--teal);cursor:pointer;white-space:nowrap;font-family:'Sarabun',sans-serif;}
 .note-sec{margin-top:7px;background:var(--white);border:1px solid var(--gray-lt);border-radius:var(--rs);padding:9px 11px;}
 .note-lbl{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--text-soft);margin-bottom:5px;}
-.note-inp{width:100%;border:1.5px solid var(--gray-lt);border-radius:var(--rs);padding:6px 9px;font-size:12px;font-family:'Sarabun',sans-serif;resize:none;outline:none;}
+.note-inp{width:100%;border:1.5px solid var(--gray-lt);border-radius:var(--rs);padding:8px 11px;font-size:16px;font-family:'Sarabun',sans-serif;resize:none;outline:none;}
 .note-inp:focus{border-color:var(--blue2);}
 .note-hidden{display:none!important;}
 
@@ -366,7 +370,7 @@ body{display:flex;flex-direction:column;padding-top:var(--sat);}
 .search-pg{display:flex;flex-direction:column;gap:12px;}
 .search-pg-hd{text-align:center;padding:4px 0 2px;}
 .search-pg-box{display:flex;align-items:center;gap:0;background:var(--white);border:2px solid var(--blue2);border-radius:28px;overflow:hidden;box-shadow:0 2px 10px rgba(59,130,246,.15);}
-.search-pg-inp{flex:1;padding:12px 16px;border:none;outline:none;font-size:15px;font-family:'Sarabun',sans-serif;background:transparent;}
+.search-pg-inp{flex:1;padding:12px 16px;border:none;outline:none;font-size:16px;font-family:'Sarabun',sans-serif;background:transparent;}
 .search-pg-clear{padding:10px 14px;border:none;background:transparent;color:var(--text-soft);font-size:14px;cursor:pointer;}
 .sp-row{display:flex;align-items:center;gap:10px;background:var(--white);border:1.5px solid var(--gray-lt);border-radius:var(--r);padding:11px 13px;cursor:pointer;transition:all .15s;margin-bottom:6px;}
 .sp-row:active{transform:scale(.98);}
@@ -418,6 +422,105 @@ body{display:flex;flex-direction:column;padding-top:var(--sat);}
   .bn-ic{font-size:17px;}
   .bn-lbl{font-size:10px;}
 }
+
+/* ══════════════════════════════════
+   MOBILE ENHANCEMENTS PATCH
+══════════════════════════════════ */
+/* ป้องกัน text resize เมื่อหมุนจอ */
+html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+
+/* iOS Safe Area */
+.bnav {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+.om-cta {
+  padding-bottom: calc(10px + env(safe-area-inset-bottom, 0px));
+}
+.topbar {
+  padding-top: max(10px, env(safe-area-inset-top, 10px));
+}
+
+/* touch-action: ป้องกัน double-tap zoom delay */
+.mc, .rc, .sp-row, .dc-item, .hi, .ts-row,
+.wbtn, .hf, .hbtn, .dbtn, .ds-b, .hist-shortcut,
+.bn, .bn-qr-fab, .om-back, .ob-chg, .btn-ok, .btn-no {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* ทุก input/textarea ให้ font-size >= 16px เสมอ ป้องกัน iOS zoom */
+input,textarea,
+select {
+  appearance: none;
+  -webkit-appearance: none;
+  font-size: 16px;
+}
+
+/* smooth momentum scroll */
+.page, .om-body, .ward-row, .day-strip,
+.hf-row, .hist-bldg-row { 
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+}
+
+/* bottom nav ใหญ่ขึ้นบน mobile */
+@media (max-width: 480px) {
+  .bn { min-height: 52px; }
+  .bn-ic { font-size: 21px; }
+  .bn-lbl { font-size: 11px; }
+  .bn-qr-fab { width: 56px; height: 56px; top: -20px; }
+  .rc { padding: 11px 10px 9px; }
+  .rc-id { font-size: 14px; }
+  .rc-pt-name { font-size: 13px; }
+  .menu-grid { gap: 8px; }
+  .mc-name { font-size: 12px; line-height: 1.35; }
+  .mc-body { padding: 7px 7px 6px; }
+  .om-room { font-size: 15px; }
+  .om-pt { font-size: 12px; }
+  .btn-ord { min-height: 52px; font-size: 15px; }
+  .btn-ok, .btn-no { min-height: 50px; }
+  .ds-b { min-height: 40px; padding: 6px 14px; }
+  .wbtn { min-height: 40px; padding: 6px 13px; }
+  .hf, .hbtn { min-height: 40px; padding: 6px 13px; }
+  .hist-shortcut { min-height: 38px; padding: 6px 11px; }
+  /* stats4 2 คอลัมน์บน mobile แคบ */
+  .stats4 { grid-template-columns: repeat(2, 1fr); gap: 6px; }
+  .s3-n { font-size: 22px; }
+  /* room grid */
+  .rooms-grid { grid-template-columns: repeat(2, 1fr); gap: 7px; }
+  /* menu grid 2 คอลัมน์ */
+  .menu-grid { grid-template-columns: repeat(2, 1fr); }
+  /* hist date row */
+  .hist-date-inp { width: 130px; }
+  .hist-range-shortcuts { margin-left: 0; }
+}
+
+/* iPhone SE, Galaxy A */
+@media (max-width: 375px) {
+  .rc-id { font-size: 13px; }
+  .rc-pt-name { font-size: 12px; }
+  .hist-date-inp { width: 110px; }
+  .stats4 { grid-template-columns: repeat(2, 1fr); }
+  .menu-grid { grid-template-columns: repeat(2, 1fr); gap: 6px; }
+}
+
+/* Landscape phone */
+@media (max-height: 500px) and (orientation: landscape) {
+  .topbar { padding: 6px 14px 5px; }
+  .tb-title { font-size: 14px; }
+  .bnav { min-height: 44px; }
+  .bn-qr-fab { width: 46px; height: 46px; top: -14px; font-size: 20px; }
+  .bn-ic { font-size: 17px; }
+  .bn-lbl { font-size: 10px; }
+}
+
+/* iOS overrides */
+@supports (-webkit-touch-callout: none) {
+  .page { padding-bottom: max(20px, env(safe-area-inset-bottom, 20px)); }
+  input, textarea { font-size: 16px !important; }
+  /* prevent callout on long press */
+  img { -webkit-touch-callout: none; }
+}
 </style>
 </head>
 <body>
@@ -441,7 +544,7 @@ body{display:flex;flex-direction:column;padding-top:var(--sat);}
   <!-- ═══ PAGE 1 : ROOMS ═══ -->
   <div class="page show" id="page-rooms">
     <div class="p1-bar">
-      <input class="srch" id="roomSearch" placeholder="🔍 ค้นหาชื่อ / HN / AN / ห้อง..." oninput="renderRooms()">
+      <input class="srch" id="roomSearch" placeholder="🔍 ค้นหาชื่อ / HN / AN / ห้อง..." oninput="renderRooms()" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
     </div>
     <div class="ward-row" id="wardRow"></div>
     <div class="stats4">
@@ -476,12 +579,12 @@ body{display:flex;flex-direction:column;padding-top:var(--sat);}
       <!-- แถวช่วงวันที่ -->
       <div class="hist-range-row">
         <span class="hist-range-lbl">📅 ตั้งแต่</span>
-        <input class="hist-date-inp" id="histDateFrom" type="text"
+        <input class="hist-date-inp" id="histDateFrom" type="tel"
           placeholder="วว/ดด/ปปปป" maxlength="10" inputmode="numeric"
           oninput="onHistRangeInput(this,'from')">
         <span class="hist-range-sep">—</span>
         <span class="hist-range-lbl">ถึง</span>
-        <input class="hist-date-inp" id="histDateTo" type="text"
+        <input class="hist-date-inp" id="histDateTo" type="tel"
           placeholder="วว/ดด/ปปปป" maxlength="10" inputmode="numeric"
           oninput="onHistRangeInput(this,'to')">
         <button class="hist-clear-btn" id="histClearBtn" onclick="clearHistDate()">✕ ล้าง</button>
@@ -523,7 +626,7 @@ body{display:flex;flex-direction:column;padding-top:var(--sat);}
         <div style="font-size:12px;color:var(--text-soft);margin-top:3px;">พิมพ์ HN, AN หรือชื่อห้อง</div>
       </div>
       <div class="search-pg-box">
-        <input class="search-pg-inp" id="searchPgInp"
+        <input class="search-pg-inp" id="searchPgInp" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"
           placeholder="เช่น 101, HN12345, AN98765"
           oninput="renderSearchPg()"
           onkeydown="if(event.key==='Enter'&&_searchPgFirst)openRoom(_searchPgFirst)">
@@ -596,7 +699,7 @@ body{display:flex;flex-direction:column;padding-top:var(--sat);}
 
 <script>
 
-    const API = 'https://vampire-surrounded-surname-turbo.trycloudflare.com';
+    const API = 'https://trainer-acrobat-need-dice.trycloudflare.com';
 
     window.onload = () => {
       fetch(`${API}/orders`)
@@ -803,7 +906,7 @@ function getMealTimes(){
     {key:'morning_snack',name:'มื้อว่างเช้า',em:'☕',serve:'09:30–10:00',cutoff:null},
     {key:'noon',name:'มื้อเที่ยง',em:'☀️',serve:'11:30–12:30',cutoff:null},
     {key:'noon_snack',name:'มื้อว่างเที่ยง',em:'🍵',serve:'14:00–14:30',cutoff:null},
-    {key:'evening',name:'มื้อเย็น',em:'🌙',serve:'17:00–18:00',cutoff:null},
+    {key:'evening',name:'มื้อเย็น',em:'🌙',serve:'17:00–18:00',cutoff:'11:00'},
   ];
 }
 
@@ -860,7 +963,7 @@ let m7Day = today();
    Logic เหมือน admin (dedup ด้วย AN)
 ════════════════════════════════════ */
 async function fetchPatients() {
-  const apiUrl = 'https://vampire-surrounded-surname-turbo.trycloudflare.com';
+  const apiUrl = API;
   const bar   = document.getElementById('apiBar');
   const badge = document.getElementById('apiBadge');
   if(bar)   bar.classList.add('show');
@@ -911,7 +1014,7 @@ async function fetchPatients() {
    ดึง D/C วันนี้จาก /api/hosxp/discharge-today
 ════════════════════════════════════ */
 async function fetchDischarge() {
-  const apiUrl = 'https://vampire-surrounded-surname-turbo.trycloudflare.com';
+  const apiUrl = API;
   const out    = document.getElementById('dcOut');
   if(out) out.innerHTML = `<div class="empty"><div class="empty-ic">⏳</div><div class="empty-t">กำลังโหลด...</div></div>`;
   try {
@@ -942,20 +1045,18 @@ async function fetchDischarge() {
 }
 
 /* ════════════════════════════════════
-   LINE NOTIFY (ผ่าน MOPH API)
+   LINE NOTIFY (ผ่าน FastAPI backend เพื่อหลีกเลี่ยง CORS)
 ════════════════════════════════════ */
 async function sendLineMsg(msg) {
-  const ck = cfg.linetoken  || '';
-  const sk = cfg.linesecret || '';
-  if(!ck || !sk) return { ok:false, reason:'ยังไม่ได้ตั้ง client-key / secret-key' };
+  const apiUrl = API;
   try {
-    const res = await fetch('https://morpromt2f.moph.go.th/api/notify/send', {
+    const res = await fetch(`${apiUrl}/api/moph/notify`, {
       method: 'POST',
-      headers: { 'Content-Type':'application/json', 'client-key':ck, 'secret-key':sk },
-      body: JSON.stringify({ messages:[{ type:'text', text: String(msg) }] }),
+      headers: { 'Content-Type':'application/json' },
+      body: JSON.stringify({ message: String(msg) }),
     });
     const d = await res.json().catch(() => ({}));
-    return res.ok ? { ok:true } : { ok:false, reason: d.message||'HTTP '+res.status };
+    return res.ok ? { ok:true } : { ok:false, reason: d.detail||'HTTP '+res.status };
   } catch(e) {
     return { ok:false, reason: e.message };
   }
@@ -1408,7 +1509,7 @@ function renderOrderBody(){
       html += `</div>`;
       html += `<div class="note-sec${c.shownote===false?' note-hidden':''}">
         <div class="note-lbl">💬 หมายเหตุ</div>
-        <textarea class="note-inp" id="note-${key}" rows="2" placeholder="ไม่เผ็ด, ไม่เอาผัก..."
+        <textarea class="note-inp" id="note-${key}" rows="2" autocomplete="off" autocorrect="off" placeholder="ไม่เผ็ด, ไม่เอาผัก..."
           oninput="updNote('${key}',this.value)">${sel[key]?.note||''}</textarea>
       </div>`;
     }
@@ -1517,17 +1618,17 @@ function confirmOrder(){
   updateBadges();
   toast(`✅ สั่งอาหาร ${added} มื้อเรียบร้อย`, 'ok');
 
-  // แจ้งเตือน LINE ถ้าตั้งค่าไว้
-  cfg = getCfg();
-  if(cfg.linetoken && cfg.linesecret) {
+  // แจ้งเตือน LINE ผ่าน FastAPI backend (key อยู่บน server — ไม่ต้องเช็คฝั่ง client)
+  {
     const sep = '──────────────────';
     const newOrds = orders.filter(o => o.orderedAt === batchAt);
     const mealLines = newOrds.map(o => `${MEAL_EM[o.mealKey]||'🍽️'} ${MEAL_NAMES[o.mealKey]||o.mealKey}: ${o.menuName}${o.note?'\n📝 '+o.note:''}`).join('\n');
-    // รูปแบบห้อง: "ห้อง 206 พิเศษตึกศัลกรรม | IPD4"
     const roomDisplay = room.roomName ? `ห้อง ${room.roomName}${room.ward?' '+room.ward:''}` : `ห้อง ${activeRoomId}`;
-    const wardDisplay = room.ward || '-';
-    const msg = `🍱 ผู้ป่วยสั่งอาหาร\n${sep}\n👤 ${room.pt||'-'}\n📍 ${roomDisplay} | ${wardDisplay}\nHN:${room.hn||'-'} | AN:${room.an||'-'}\n${sep}\n${mealLines}\n${sep}`;
-    sendLineMsg(msg).then(res => { if(res.ok) toast('📱 แจ้ง LINE แล้ว'); });
+    const msg = `🍱 ผู้ป่วยสั่งอาหาร\n${sep}\n👤 ${room.pt||'-'}\n📍 ${roomDisplay} | ${room.ward||'-'}\nHN:${room.hn||'-'} | AN:${room.an||'-'}\n${sep}\n${mealLines}\n${sep}`;
+    sendLineMsg(msg).then(res => {
+      if(res.ok) toast('📱 แจ้ง LINE แล้ว');
+      else console.warn('LINE notify failed:', res.reason);
+    });
   }
 }
 
